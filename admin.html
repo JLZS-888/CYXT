@@ -6,7 +6,7 @@
     <title>计量证书管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-slate-50 p-6 min-h-screen">
     <!-- 登录遮罩 -->
@@ -524,39 +524,33 @@
             console.log('QR URL:', targetUrl);
             console.log('URL length:', targetUrl.length);
             
-            // 优化二维码参数：使用 M 级容错，增大尺寸，降低密度
-            QRCode.toCanvas(canvas, targetUrl, { 
-                width: 320, 
-                margin: 3, 
-                color: { dark: '#000000', light: '#FFFFFF' },
-                errorCorrectionLevel: 'M',  // M级容错，平衡容量和识别率
-                scale: 4  // 增大模块大小，降低码点密度
-            }, function(error) {
-                if (error) {
-                    console.error('QR生成错误:', error);
-                    alert('二维码生成失败，请检查数据');
-                }
-                
-                // 显示证书信息在弹窗中
-                const isJianDing = cert.reportType === '检定';
-                const resultLabel = isJianDing ? '检定结果' : '校准结果';
-                const resultText = isJianDing ? '合格' : '符合要求';
-                // 只显示对应类型的信息，不显示"报告类型"字段，避免"检定/校准"同时出现
-                const infoHtml = `
-                    <div class="font-bold text-slate-700 border-b pb-2 mb-2">证书信息</div>
-                    ${cert.client ? `<div><span class="text-slate-500">委托单位:</span> <span class="font-medium">${cert.client}</span></div>` : ''}
-                    ${cert.id && !cert.id.startsWith('TEMP_') ? `<div><span class="text-slate-500">证书编号:</span> <span class="font-medium">${cert.id}</span></div>` : ''}
-                    ${cert.instrumentName ? `<div><span class="text-slate-500">仪器名称:</span> <span class="font-medium">${cert.instrumentName}</span></div>` : ''}
-                    <div class="pt-2 mt-2 border-t border-slate-200">
-                        <span class="text-slate-500">${resultLabel}:</span> 
-                        <span class="font-bold ${isJianDing ? 'text-blue-600' : 'text-emerald-600'}">${resultText}</span>
-                    </div>
-                `;
-                document.getElementById('qrInfo').innerHTML = infoHtml;
-                
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
+            // 使用 qrcodejs 生成二维码
+            canvas.innerHTML = '';
+            new QRCode(canvas, {
+                text: targetUrl,
+                width: 280,
+                height: 280,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
             });
+            
+            // 显示证书信息
+            const isJianDing = cert.reportType === '检定';
+            const resultLabel = isJianDing ? '检定结果' : '校准结果';
+            const resultText = isJianDing ? '合格' : '符合要求';
+            const infoHtml = '<div class="font-bold text-slate-700 border-b pb-2 mb-2">证书信息</div>' +
+                (cert.client ? '<div><span class="text-slate-500">委托单位:</span> <span class="font-medium">' + cert.client + '</span></div>' : '') +
+                (cert.id && !cert.id.startsWith('TEMP_') ? '<div><span class="text-slate-500">证书编号:</span> <span class="font-medium">' + cert.id + '</span></div>' : '') +
+                (cert.instrumentName ? '<div><span class="text-slate-500">仪器名称:</span> <span class="font-medium">' + cert.instrumentName + '</span></div>' : '') +
+                '<div class="pt-2 mt-2 border-t border-slate-200">' +
+                    '<span class="text-slate-500">' + resultLabel + ':</span> ' +
+                    '<span class="font-bold ' + (isJianDing ? 'text-blue-600' : 'text-emerald-600') + '">' + resultText + '</span>' +
+                '</div>';
+            document.getElementById('qrInfo').innerHTML = infoHtml;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
         
         function closeQR() {

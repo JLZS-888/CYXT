@@ -1068,7 +1068,8 @@
                     ['出厂编号', certData.factoryNumber || ''],
                     ['校准日期', certData.calibrationDate || ''],
                     ['有效期至', certData.expiryDate || ''],
-                ].filter(r => r[1] && (cfgMask >> ['委托单位','证书编号','报告类型','委托单号','仪器名称','型号','厂商','出厂编号','校准日期','有效期至'].indexOf(r[0]) & 1));(r => r[1]);
+       ].filter(r => r[1] && (cfgMask >> ['委托单位','证书编号','报告类型','委托单号','仪器名称','型号','厂商','出厂编号','校准日期','有效期至'].indexOf(r[0]) & 1));
+                (r => r[1]);
                 const rowsHtml = rows.map(r =>
                     '<div class="flex border-b border-slate-100 py-3 text-sm">' +
                     '<span class="text-slate-400 w-28 shrink-0">' + r[0] + '</span>' +

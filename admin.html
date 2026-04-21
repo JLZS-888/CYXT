@@ -1054,19 +1054,31 @@
                 const resultText = isJianDing ? '合格' : '符合要求';
                 const resultColor = isJianDing ? 'text-blue-600' : 'text-emerald-600';
                 const reportLabel = isJianDing ? '检定结论' : '校准结论';
-                const titleImg = unit === 'S' ? '<img src="../images/sz-jly-title.png" class="w-full max-h-20 object-contain mb-2" alt="">' : '';
+                const titleImg = unit === 'S' ? '<img src="../images/sz-jly-title.png" class="w-full object-cover rounded-lg" alt="">' : '';
                 const titleText = unit === 'S' ? '深圳计量质量检测研究院' : '计量证书';
-                const rows = [
+                            const cfgMask = (typeof fieldConfig !== 'undefined' && fieldConfig.cfgMask) ? fieldConfig.cfgMask : 2047;
+            const rows = [
+                    if (cfgMask & (1 << 0))
                     ['委托单位', certData.client || ''],
+                    if (cfgMask & (1 << 1))
                     ['证书编号', certData.id && !certData.id.startsWith('TEMP_') ? certData.id : ''],
+                    if (cfgMask & (1 << 2))
                     ['报告类型', isJianDing ? '检定' : '校准'],
+                    if (cfgMask & (1 << 3))
                     ['委托单号', certData.orderNumber || ''],
+                    if (cfgMask & (1 << 4))
                     ['仪器名称', certData.instrumentName || ''],
+                    if (cfgMask & (1 << 5))
                     ['型号', certData.model || ''],
+                    if (cfgMask & (1 << 6))
                     ['厂商', certData.manufacturer || ''],
+                    if (cfgMask & (1 << 7))
                     ['出厂编号', certData.factoryNumber || ''],
+                    if (cfgMask & (1 << 8))
                     ['校准日期', certData.calibrationDate || ''],
+                    if (cfgMask & (1 << 9))
                     ['有效期至', certData.expiryDate || ''],
+                    if (cfgMask & (1 << 10))
                 ].filter(r => r[1]);
                 const rowsHtml = rows.map(r =>
                     '<div class="flex border-b border-slate-100 py-3 text-sm">' +
@@ -1079,7 +1091,7 @@
                 const pg = '<!DOCTYPE html>' + String.fromCharCode(10) +
                     '<html lang="zh-CN">' + String.fromCharCode(10) +
                     '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-                    '<title>' + (certData.id || '证书') + ' - ' + titleText + '</title>' +
+                    '<title>' + (certData.id.startsWith('TEMP_') ? '\u8ba1\u91d1\u8bc1\u4ef6\u67e5\u8be2' : certData.id) + '</title>' +
                     '<script src="https://cdn.tailwindcss.com"></' + 'script></head>' + String.fromCharCode(10) +
                     '<body class="bg-slate-50 min-h-screen">' + String.fromCharCode(10) +
                     '<div class="max-w-lg mx-auto p-4">' + String.fromCharCode(10) +

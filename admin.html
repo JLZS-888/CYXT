@@ -803,7 +803,8 @@
 
             alert('保存成功！');
 
-            resetForm();
+            
+            pushCertToGitHub(certData);resetForm();
 
             document.getElementById('saveStatus').textContent = '已保存';
 

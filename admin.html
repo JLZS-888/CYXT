@@ -107,6 +107,13 @@
                             </select>
                         </div>
                         <div>
+                            <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">计量单位</label>
+                            <select id="unit" class="p-3 border rounded-xl w-full outline-none focus:border-emerald-500 bg-slate-50/50">
+                                <option value="">默认 (无)</option>
+                                <option value="S">深圳计量院</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">检定/校准结果</label>
                             <input type="text" id="result" readonly class="w-full p-3 border rounded-xl bg-slate-100 text-emerald-600 font-bold cursor-not-allowed" value="符合要求">
                         </div>
@@ -359,6 +366,7 @@
             
             const certData = {
                 id: id,
+                unit: document.getElementById('unit').value,
                 reportType: document.getElementById('reportType').value,
                 result: document.getElementById('result').value,
                 orderNumber: document.getElementById('orderNo').value,
@@ -402,6 +410,7 @@
             document.getElementById('fact').value = '';
             document.getElementById('model').value = '';
             document.getElementById('reportType').value = '校准';
+            document.getElementById('unit').value = '';
             document.getElementById('validityPeriod').value = '12';
             updateDateLabel();
             updateResult();
@@ -519,7 +528,8 @@
             const jsonStr = JSON.stringify(dataToEncode);
             const base64Encoded = btoa(unescape(encodeURIComponent(jsonStr)));
             
-            const targetUrl = QUERY_BASE_URL + '?d=' + encodeURIComponent(base64Encoded) + '&cfg=' + cfgMask;
+            const unitParam = cert.unit ? '&u=' + cert.unit : '';
+            const targetUrl = QUERY_BASE_URL + '?d=' + encodeURIComponent(base64Encoded) + '&cfg=' + cfgMask + unitParam;
             
             console.log('QR URL:', targetUrl);
             console.log('URL length:', targetUrl.length);
@@ -568,6 +578,7 @@
             if (!cert) return;
 
             document.getElementById('reportType').value = cert.reportType || '校准';
+            document.getElementById('unit').value = cert.unit || '';
             updateDateLabel();
             updateResult();
             document.getElementById('certNo').value = cert.id.startsWith('TEMP_') ? '' : cert.id;

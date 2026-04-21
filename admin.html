@@ -135,6 +135,7 @@
 <div class="mt-4 pt-3 border-t border-slate-200">
                             <div class="text-xs text-slate-500 mb-2">GitHub Token (推送证书永久页面用)</div>
                             <input type="password" id="githubToken" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="ghp_xxxx" value="">
+<div class="mt-3"><label class="text-xs text-slate-500">CF API Token</label><input type="password" id="cfToken" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Cloudflare API Token"><button onclick="saveCFToken()" class="mt-1 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm w-full">保存 CF Token</button><div id="cfStatus" class="text-xs mt-1"></div></div>
                             <button onclick="saveGitHubToken()" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">保存 Token</button>
                             <div id="tokenStatus" class="text-xs mt-1"></div>
                         </div>
@@ -518,10 +519,10 @@
 
         // 查询页基础URL - 固定指向 GitHub Pages
 
-        const QUERY_BASE_URL = 'https://jlzs-888.github.io/CYXT/index.html';
+        const QUERY_BASE_URL = 'https://jlzscy.pages.dev/index.html';
         const GITHUB_TOKEN = localStorage.getItem('gh_pat') || '';
         const GH_TOKEN = localStorage.getItem('gh_pat') || '';
-        const CERT_PAGE_BASE = 'https://jlzs-888.github.io/CYXT/certs';
+        const CERT_PAGE_BASE = 'https://jlzscy.pages.dev/certs';
         const GH_OWNER = 'JLZS-888';
         const GH_REPO = 'CYXT';
 
@@ -581,7 +582,7 @@
 
             alert('配置已保存');
             const savedCert = certs.find(c => c.id === id) || certData;
-            pushCertToGitHub(savedCert);
+            pushCertToCF(savedCert);
 
         }
 
@@ -1030,34 +1031,27 @@
 
         
 
-        async function pushCertToGitHub(certData) {
-            const tok = localStorage.getItem('gh_pat');
-            if (!tok) {
-                document.getElementById('saveStatus').textContent = '请先设Token';
+        async function pushCertToCF(certData) {
+            const cfToken = localStorage.getItem('cf_token');
+            if (!cfToken) {
+                document.getElementById('saveStatus').textContent = '请先设CF Token';
                 document.getElementById('saveStatus').className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold';
-                alert('请先在右侧「系统设置」输入 GitHub Token');
+                alert('请先在右侧「系统设置」输入 Cloudflare API Token');
                 return;
             }
             const id = certData.id;
-            const path = 'certs/' + id + '.html';
-            const certUrl = CERT_PAGE_BASE + '/' + id + '.html';
-            document.getElementById('saveStatus').textContent = 'push...';
+            document.getElementById('saveStatus').textContent = '上传中...';
             document.getElementById('saveStatus').className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold';
             try {
-                let sha = null;
-                const gr = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                    headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json' }
-                });
-                if (gr.ok) { const gd = await gr.json(); sha = gd.sha; }
                 const unit = certData.unit || '';
                 const isJianDing = certData.reportType === '检定';
                 const resultText = isJianDing ? '合格' : '符合要求';
                 const resultColor = isJianDing ? 'text-blue-600' : 'text-emerald-600';
                 const reportLabel = isJianDing ? '检定结论' : '校准结论';
-                const titleImg = unit === 'S' ? '<img src="../images/sz-jly-title.png" class="w-full object-cover rounded-lg" alt="">' : '';
+                const titleImg = unit === 'S' ? '<img src="https://jlzscy.pages.dev/images/sz-jly-title.png" class="w-full object-cover rounded-lg" alt="">' : '';
                 const titleText = '计量证书查询';
-                            const cfgMask = (typeof fieldConfig !== 'undefined' && fieldConfig.cfgMask) ? fieldConfig.cfgMask : 2047;
-            const rows = [
+                const cfgMask = (typeof fieldConfig !== 'undefined' && fieldConfig.cfgMask) ? fieldConfig.cfgMask : 2047;
+                const rows = [
                     ['委托单位', certData.client || ''],
                     ['证书编号', certData.id && !certData.id.startsWith('TEMP_') ? certData.id : ''],
                     ['报告类型', isJianDing ? '检定' : '校准'],
@@ -1068,8 +1062,7 @@
                     ['出厂编号', certData.factoryNumber || ''],
                     ['校准日期', certData.calibrationDate || ''],
                     ['有效期至', certData.expiryDate || ''],
-       ].filter(r => r[1] && (cfgMask >> ['委托单位','证书编号','报告类型','委托单号','仪器名称','型号','厂商','出厂编号','校准日期','有效期至'].indexOf(r[0]) & 1));
-                
+                ].filter(r => r[1] && (cfgMask >> ['委托单位','证书编号','报告类型','委托单号','仪器名称','型号','厂商','出厂编号','校准日期','有效期至'].indexOf(r[0]) & 1));
                 const rowsHtml = rows.map(r =>
                     '<div class="flex border-b border-slate-100 py-3 text-sm">' +
                     '<span class="text-slate-400 w-28 shrink-0">' + r[0] + '</span>' +
@@ -1081,43 +1074,36 @@
                 const pg = '<!DOCTYPE html>' + String.fromCharCode(10) +
                     '<html lang="zh-CN">' + String.fromCharCode(10) +
                     '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-                    '<title>' + (certData.id.startsWith('TEMP_') ? '\u8ba1\u91d1\u8bc1\u4ef6\u67e5\u8be2' : certData.id) + '</title>' +
-                    '<script src="https://cdn.tailwindcss.com"></' + 'script></head>' + String.fromCharCode(10) +
+                    '<title>计量证书查询</title>' +
+                    '<script src="https://cdn.tailwindcss.com"></script></head>' + String.fromCharCode(10) +
                     '<body class="bg-slate-50 min-h-screen">' + String.fromCharCode(10) +
                     '<div class="max-w-lg mx-auto p-4">' + String.fromCharCode(10) +
                     '<div class="text-center py-4 mb-4">' + titleImg + '</div>' + String.fromCharCode(10) +
                     '<div class="bg-white rounded-2xl shadow-sm p-5">' + rowsHtml + resultRow + '</div>' + String.fromCharCode(10) +
                     '<div class="text-center mt-6 text-xs text-slate-300">证书永久存档 扫码直接查看</div>' + String.fromCharCode(10) +
                     '</div></body></html>';
+                const accountId = '22e186d1ed514d9443307638912dbeb0';
                 const b64 = btoa(unescape(encodeURIComponent(pg)));
-                const body = { message: 'add cert page: ' + id, content: b64 };
-                if (sha) body.sha = sha;
-                const pr = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                    method: 'PUT',
-                    headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                const body = JSON.stringify({
+                    files: [{ path: 'certs/' + id + '.html', data: pg, encoding: 'utf-8' }]
                 });
-                if (pr.ok) {
-                    const existing = certs.findIndex(c => c.id === id);
-                    if (existing >= 0) { certs[existing].url = certUrl; }
-                    else { certData.url = certUrl; }
-                    saveToStorage();
-                    renderList();
-                    document.getElementById('saveStatus').textContent = 'ok';
-                    document.getElementById('saveStatus').className = 'text-[10px] bg-emerald-600 px-3 py-1 rounded-full font-bold';
-                    setTimeout(() => {
-                        document.getElementById('saveStatus').textContent = '准备就绪';
-                        document.getElementById('saveStatus').className = 'text-[10px] bg-blue-800 px-3 py-1 rounded-full font-bold';
-                    }, 3000);
-                } else {
+                const pr = await fetch('https://api.cloudflare.com/client/v4/accounts/' + accountId + '/pages/files/direct/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + cfToken, 'Content-Type': 'application/json' },
+                    body: body
+                });
+                if (!pr.ok) {
                     const err = await pr.text();
-                    console.error('push failed:', err);
-                    document.getElementById('saveStatus').textContent = 'fail';
+                    document.getElementById('saveStatus').textContent = 'cf fail: ' + pr.status;
                     document.getElementById('saveStatus').className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold';
+                    console.error('cf upload failed:', err);
+                } else {
+                    document.getElementById('saveStatus').textContent = '证书页已发布: ' + id;
+                    document.getElementById('saveStatus').className = 'text-[10px] bg-green-600 px-3 py-1 rounded-full font-bold';
                 }
             } catch(e) {
                 console.error(e);
-                document.getElementById('saveStatus').textContent = 'fail';
+                document.getElementById('saveStatus').textContent = 'fail: ' + e.message;
                 document.getElementById('saveStatus').className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold';
             }
         }

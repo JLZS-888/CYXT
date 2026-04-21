@@ -1058,28 +1058,17 @@
                 const titleText = unit === 'S' ? '深圳计量质量检测研究院' : '计量证书';
                             const cfgMask = (typeof fieldConfig !== 'undefined' && fieldConfig.cfgMask) ? fieldConfig.cfgMask : 2047;
             const rows = [
-                    if (cfgMask & (1 << 0))
                     ['委托单位', certData.client || ''],
-                    if (cfgMask & (1 << 1))
                     ['证书编号', certData.id && !certData.id.startsWith('TEMP_') ? certData.id : ''],
-                    if (cfgMask & (1 << 2))
                     ['报告类型', isJianDing ? '检定' : '校准'],
-                    if (cfgMask & (1 << 3))
                     ['委托单号', certData.orderNumber || ''],
-                    if (cfgMask & (1 << 4))
                     ['仪器名称', certData.instrumentName || ''],
-                    if (cfgMask & (1 << 5))
                     ['型号', certData.model || ''],
-                    if (cfgMask & (1 << 6))
                     ['厂商', certData.manufacturer || ''],
-                    if (cfgMask & (1 << 7))
                     ['出厂编号', certData.factoryNumber || ''],
-                    if (cfgMask & (1 << 8))
                     ['校准日期', certData.calibrationDate || ''],
-                    if (cfgMask & (1 << 9))
                     ['有效期至', certData.expiryDate || ''],
-                    if (cfgMask & (1 << 10))
-                ].filter(r => r[1]);
+                ].filter(r => r[1] && (cfgMask >> ['委托单位','证书编号','报告类型','委托单号','仪器名称','型号','厂商','出厂编号','校准日期','有效期至'].indexOf(r[0]) & 1));(r => r[1]);
                 const rowsHtml = rows.map(r =>
                     '<div class="flex border-b border-slate-100 py-3 text-sm">' +
                     '<span class="text-slate-400 w-28 shrink-0">' + r[0] + '</span>' +

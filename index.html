@@ -208,10 +208,15 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('certInfo').classList.remove('hidden');
 
-            // 顶部大编号
-            document.getElementById('certId').textContent = cert.id || '(无编号)';
+            // 顶部大编号（无编号时不显示整块）
+            const topCertId = document.getElementById('certId');
+            const topCertIdSection = topCertId.closest('.text-center');
+            if (topCertIdSection) {
+                topCertIdSection.style.display = (fieldConfig.certId && cert.id) ? 'block' : 'none';
+            }
+            topCertId.textContent = cert.id || '';
 
-            // 动态构建单列卡片
+            // 动态构建单列卡片（全部黑色）
             const FIELD_DEFS = [
                 { id: 'client',        label: '委托单位',     show: fieldConfig.client },
                 { id: 'certIdInline',  label: '证书编号',     show: fieldConfig.certId },
@@ -221,11 +226,10 @@
                 { id: 'model',         label: '规格型号',     show: fieldConfig.model },
                 { id: 'factoryNumber', label: '出厂编号',     show: fieldConfig.factoryNumber },
                 { id: 'orderNumber',   label: '委托单号',     show: fieldConfig.orderNumber },
-                { id: 'calibrationDate', label: '',           show: fieldConfig.calibrationDate, labelFn: () => cert.reportType === '检定' ? '检定日期' : '校准日期', textColor: 'text-emerald-600' },
-                { id: 'expiryDate',    label: '有效期至',     show: fieldConfig.expiryDate, textColor: 'text-red-600' },
+                { id: 'calibrationDate', label: '',           show: fieldConfig.calibrationDate, labelFn: () => cert.reportType === '检定' ? '检定日期' : '校准日期' },
+                { id: 'expiryDate',    label: '有效期至',     show: fieldConfig.expiryDate },
                 { id: 'result',        label: '',             show: fieldConfig.result,
-                  labelFn: () => cert.reportType === '检定' ? '检定结果' : '校准结果',
-                  textColor: cert.reportType === '检定' ? 'text-blue-600' : 'text-emerald-600' }
+                  labelFn: () => cert.reportType === '检定' ? '检定结果' : '校准结果' }
             ];
 
             const container = document.getElementById('infoCards');
@@ -235,8 +239,7 @@
                 const raw = cert[f.id];
                 if (!raw) return;
                 const label = f.labelFn ? f.labelFn() : f.label;
-                const color = f.textColor || 'text-slate-700';
-                html += '<div class="bg-white p-4 rounded-xl"><div class="text-xs text-slate-400">' + label + '</div><div class="font-bold ' + color + '">' + raw + '</div></div>';
+                html += '<div class="bg-white p-4 rounded-xl"><div class="text-xs text-slate-400">' + label + '</div><div class="font-bold text-slate-700">' + raw + '</div></div>';
             });
             container.innerHTML = html;
 

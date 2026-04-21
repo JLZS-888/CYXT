@@ -11,8 +11,12 @@
             .print-only { display: block !important; }
         }
     </style>
+
+    <style>
+        body, body * { font-family: SimSun, 宋体, serif !important; }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+<body class="bg-white min-h-screen p-4">
     <div class="max-w-lg mx-auto">
         <!-- 头部 -->
         <div class="bg-[#1e88e5] text-white p-6 rounded-t-3xl shadow-xl text-center">
@@ -45,42 +49,42 @@
                 <!-- 信息卡片 -->
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <!-- 1. 委托单位（第一行，全宽） -->
-                    <div class="bg-slate-50 p-3 rounded-xl col-span-2">
+                    <div class="bg-white p-3 rounded-xl col-span-2">
                         <div class="text-xs text-slate-400">委托单位</div>
                         <div id="client" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 2. 证书编号 -->
-                    <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="bg-white p-3 rounded-xl">
                         <div class="text-xs text-slate-400">证书编号</div>
                         <div id="certIdInline" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 3. 报告类型 -->
-                    <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="bg-white p-3 rounded-xl">
                         <div class="text-xs text-slate-400">报告类型</div>
                         <div id="reportType" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 4. 仪器名称 -->
-                    <div class="bg-slate-50 p-3 rounded-xl col-span-2">
+                    <div class="bg-white p-3 rounded-xl col-span-2">
                         <div class="text-xs text-slate-400">仪器名称</div>
                         <div id="instrumentName" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 5. 制造厂 -->
-                    <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="bg-white p-3 rounded-xl">
                         <div class="text-xs text-slate-400">制造厂</div>
                         <div id="manufacturer" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 6. 规格型号 -->
-                    <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="bg-white p-3 rounded-xl">
                         <div class="text-xs text-slate-400">规格型号</div>
                         <div id="model" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 7. 出厂编号 -->
-                    <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="bg-white p-3 rounded-xl">
                         <div class="text-xs text-slate-400">出厂编号</div>
                         <div id="factoryNumber" class="font-bold text-slate-700"></div>
                     </div>
                     <!-- 8. 委托单号 -->
-                    <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="bg-white p-3 rounded-xl">
                         <div class="text-xs text-slate-400">委托单号</div>
                         <div id="orderNumber" class="font-bold text-slate-700"></div>
                     </div>
@@ -95,7 +99,7 @@
                         <div id="expiryDate" class="font-bold text-red-600"></div>
                     </div>
                     <!-- 11. 检定/校准结果（最后一行，全宽） -->
-                    <div class="bg-slate-50 p-3 rounded-xl col-span-2">
+                    <div class="bg-white p-3 rounded-xl col-span-2">
                         <div class="text-xs text-slate-400" id="resultLabel">检定/校准结果</div>
                         <div id="result" class="font-bold text-slate-700"></div>
                     </div>
@@ -239,7 +243,7 @@
         function setFieldVisibility(id, visible, value) {
             const el = document.getElementById(id);
             if (!el) return;
-            const container = el.closest('.bg-slate-50, .bg-emerald-50, .bg-red-50');
+            const container = el.closest('.bg-white, .bg-emerald-50, .bg-red-50');
             if (container) {
                 container.style.display = visible ? 'block' : 'none';
             }

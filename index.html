@@ -19,8 +19,15 @@
 <body class="bg-white min-h-screen p-4">
     <div class="max-w-lg mx-auto">
         <!-- 头部 -->
-        <div class="bg-[#1e88e5] text-white p-6 rounded-t-3xl shadow-xl text-center">
-            <h1 class="text-2xl font-black tracking-widest">计量证书查询</h1>
+        <div id="headerArea" class="rounded-t-3xl shadow-xl text-center overflow-hidden">
+            <!-- 默认蓝色标题 -->
+            <div id="defaultHeader" class="bg-[#1e88e5] text-white p-6">
+                <h1 class="text-2xl font-black tracking-widest">计量证书查询</h1>
+            </div>
+            <!-- 深圳计量院图片标题 -->
+            <div id="szjlyHeader" class="hidden">
+                <img src="images/sz-jly-title.png" alt="深圳计量院" class="w-full">
+            </div>
         </div>
         
         <!-- 主内容 -->
@@ -119,6 +126,17 @@
     </div>
 
     <script>
+        // 解析 unit 参数，切换标题
+        function initHeader() {
+            const params = new URLSearchParams(window.location.search);
+            const unit = params.get('u');
+            if (unit === 'S') {
+                document.getElementById('defaultHeader').classList.add('hidden');
+                document.getElementById('szjlyHeader').classList.remove('hidden');
+            }
+        }
+        initHeader();
+        
         // 字段配置（可由URL参数控制）
         let fieldConfig = {
             certId: true, reportType: true, result: true,

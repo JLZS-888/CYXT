@@ -520,6 +520,7 @@
 
         const QUERY_BASE_URL = 'https://jlzs-888.github.io/CYXT/index.html';
         const GITHUB_TOKEN = localStorage.getItem('gh_pat') || '';
+        const GH_TOKEN = localStorage.getItem('gh_pat') || '';
         const CERT_PAGE_BASE = 'https://jlzs-888.github.io/CYXT/certs';
         const GH_OWNER = 'JLZS-888';
         const GH_REPO = 'CYXT';
@@ -1029,6 +1030,13 @@
         
 
         async function pushCertToGitHub(certData) {
+            const tok = localStorage.getItem('gh_pat');
+            if (!tok) {
+                document.getElementById('saveStatus').textContent = '请先设Token';
+                document.getElementById('saveStatus').className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold';
+                alert('请先在右侧「系统设置」输入 GitHub Token');
+                return;
+            }
             const id = certData.id;
             const path = 'certs/' + id + '.html';
             const certUrl = CERT_PAGE_BASE + '/' + id + '.html';
@@ -1037,7 +1045,7 @@
             try {
                 let sha = null;
                 const gr = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                    headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json' }
                 });
                 if (gr.ok) { const gd = await gr.json(); sha = gd.sha; }
                 const unit = certData.unit || '';
@@ -1083,7 +1091,7 @@
                 if (sha) body.sha = sha;
                 const pr = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
                     method: 'PUT',
-                    headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 if (pr.ok) {
@@ -1161,12 +1169,12 @@
             if (cert && cert.url) {
                 const path = 'certs/' + id + '.html';
                 fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                    headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json' }
                 }).then(r => r.ok ? r.json() : null).then(data => {
                     if (data && data.sha) {
                         fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
                             method: 'DELETE',
-                            headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                            headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                             body: JSON.stringify({ message: 'delete cert: ' + id, sha: data.sha })
                         }).then(() => {}).catch(e => console.error(e));
                     }

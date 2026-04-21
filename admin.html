@@ -1389,6 +1389,14 @@ function saveGitHubToken() {
     document.getElementById('tokenStatus').textContent = 'saved';
     document.getElementById('tokenStatus').className = 'text-xs mt-1 text-green-600';
 }
+function saveCFToken() {
+    const t = document.getElementById('cfToken').value.trim();
+    if (!t) { document.getElementById('cfStatus').textContent = '不能为空'; return; }
+    localStorage.setItem('cf_token', t);
+    document.getElementById('cfStatus').textContent = '已保存';
+    document.getElementById('cfStatus').style.color = 'green';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('gh_pat');
     if (saved) {

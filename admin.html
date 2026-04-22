@@ -520,7 +520,7 @@
 
         // 查询页基础URL - 固定指向 GitHub Pages
 
-        const QUERY_BASE_URL = 'https://jlzscy.pages.dev/index.html';
+        const QUERY_BASE_URL = 'https://jlzs-888.github.io/CYXT/index.html';
         const GITHUB_TOKEN = localStorage.getItem('gh_pat') || '';
         const GH_TOKEN = localStorage.getItem('gh_pat') || '';
         const CERT_PAGE_BASE = 'https://jlzs-888.github.io/CYXT/certs';
@@ -1032,31 +1032,82 @@
 
         
 
-        async function pushCertToCF(certData) {
-            // 调用本地部署服务
-            const deployUrl = 'http://127.0.0.1:8765/deploy';
-            document.getElementById('saveStatus').textContent = '上传中...';
-            document.getElementById('saveStatus').className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold';
-            try {
-                const resp = await fetch(deployUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(certData)
-                });
-                const result = await resp.json();
-                if (result.success) {
-                    document.getElementById('saveStatus').textContent = '已发布: ' + certData.id;
-                    document.getElementById('saveStatus').className = 'text-[10px] bg-green-600 px-3 py-1 rounded-full font-bold';
-                    console.log('Deployed:', result.url);
+        function buildCertPage(cert) {
+            var isJD = cert.reportType === '检定';
+            var resultLabel = isJD ? '检定结论' : '校准结果';
+            var dateLabel = isJD ? '检定日期' : '校准日期';
+            var szImg = cert.unit === '深圳计量院' ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.png" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
+            var fields = '';
+            if (cert.client) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单位</div><div style="font-weight:bold;color:#334155">' + cert.client + '</div></div>';
+            if (cert.id) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-weight:bold;color:#334155">' + cert.id + '</div></div>';
+            if (cert.reportType) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">报告类型</div><div style="font-weight:bold;color:#334155">' + cert.reportType + '</div></div>';
+            if (cert.instrumentName) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">仪器名称</div><div style="font-weight:bold;color:#334155">' + cert.instrumentName + '</div></div>';
+            if (cert.manufacturer) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">制造厂</div><div style="font-weight:bold;color:#334155">' + cert.manufacturer + '</div></div>';
+            if (cert.model) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">规格型号</div><div style="font-weight:bold;color:#334155">' + cert.model + '</div></div>';
+            if (cert.factoryNumber) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">出厂编号</div><div style="font-weight:bold;color:#334155">' + cert.factoryNumber + '</div></div>';
+            if (cert.orderNumber) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单号</div><div style="font-weight:bold;color:#334155">' + cert.orderNumber + '</div></div>';
+            if (cert.calibrationDate) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + dateLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.calibrationDate + '</div></div>';
+            if (cert.expiryDate) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">有效期至</div><div style="font-weight:bold;color:#334155">' + cert.expiryDate + '</div></div>';
+            if (cert.result) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + resultLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.result + '</div></div>';
+            var validHtml = '';
+            if (cert.expiryDate) {
+                var today = new Date(); today.setHours(0,0,0,0);
+                var exp = new Date(cert.expiryDate);
+                if (exp >= today) {
+                    var days = Math.ceil((exp - today) / 86400000);
+                    validHtml = '<div style="margin-top:16px;padding:16px;border-radius:12px;text-align:center;font-weight:bold;background:#d1fae5;color:#059669">✓ 证书有效（剩余 ' + days + ' 天）</div>';
                 } else {
-                    document.getElementById('saveStatus').textContent = '部署失败';
-                    document.getElementById('saveStatus').className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold';
-                    console.error('Deploy failed:', result.message);
+                    validHtml = '<div style="margin-top:16px;padding:16px;border-radius:12px;text-align:center;font-weight:bold;background:#fee2e2;color:#dc2626">⚠ 证书已过期</div>';
+                }
+            }
+            return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>计量证书 - ' + (cert.id || '') + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:SimSun,宋体,serif;background:#f8fafc;min-height:100vh;padding:16px}</style></head><body><div style="max-width:480px;margin:0 auto"><div style="border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">' + szImg + '<div style="background:#1e88e5;color:#fff;padding:24px;text-align:center"><h1 style="font-size:24px;font-weight:900;letter-spacing:8px">计量证书查询</h1></div></div><div style="background:#fff;padding:24px;border-radius:0 0 24px 24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)"><div style="text-align:center;padding-bottom:16px;border-bottom:1px solid #f1f5f9"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-size:24px;font-weight:900;color:#1e88e5;letter-spacing:2px">' + (cert.id || '') + '</div></div><div style="display:flex;flex-direction:column;gap:8px">' + fields + '</div>' + validHtml + '</div><div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8"><p>计量证书查询</p></div></div></body></html>';
+        }
+
+        async function pushCertToCF(certData) {
+            var statusEl = document.getElementById('saveStatus');
+            var pat = localStorage.getItem('gh_pat') || '';
+            if (!pat) {
+                if (statusEl) { statusEl.textContent = '请先填写Token'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
+                return;
+            }
+            if (statusEl) { statusEl.textContent = '上传中...'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
+            try {
+                var certId = certData.id || certData.certNo;
+                var cert = { id: certId, reportType: certData.reportType || '', result: certData.result || '', client: certData.client || '', instrumentName: certData.instrumentName || certData.name || '', manufacturer: certData.manufacturer || '', factoryNumber: certData.factoryNumber || '', calibrationDate: certData.calibrationDate || certData.date || '', expiryDate: certData.expiryDate || '', model: certData.model || '', orderNumber: certData.orderNumber || '', unit: certData.unit || '' };
+                var htmlContent = buildCertPage(cert);
+                var path = 'certs/' + certId + '.html';
+                var base64Content = Buffer.from(htmlContent, 'utf-8').toString('base64');
+                // Check if file exists first
+                var checkRes = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
+                    headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                var body = { message: 'Deploy cert ' + certId, content: base64Content, branch: 'main' };
+                if (checkRes.ok) {
+                    var existing = await checkRes.json();
+                    body.sha = existing.sha;
+                }
+                var putRes = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (putRes.ok) {
+                    var result = await putRes.json();
+                    var url = 'https://jlzs-888.github.io/' + GH_REPO + '/certs/' + certId + '.html';
+                    // Update cert url in localStorage
+                    certData.url = url;
+                    var certs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                    var idx = certs.findIndex(function(c) { return c.id === certId; });
+                    if (idx >= 0) { certs[idx].url = url; localStorage.setItem(STORAGE_KEY, JSON.stringify(certs)); }
+                    if (statusEl) { statusEl.textContent = '已发布'; statusEl.className = 'text-[10px] bg-green-600 px-3 py-1 rounded-full font-bold'; }
+                } else {
+                    var errData = await putRes.json().catch(function() { return {}; });
+                    if (statusEl) { statusEl.textContent = '发布失败'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
+                    console.error('Push failed:', putRes.status, errData);
                 }
             } catch(e) {
                 console.error('Deploy error:', e);
-                document.getElementById('saveStatus').textContent = '服务未启动';
-                document.getElementById('saveStatus').className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold';
+                if (statusEl) { statusEl.textContent = '发布出错'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
             }
         }
 

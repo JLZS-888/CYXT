@@ -303,7 +303,7 @@
 
                         <div>
 
-                            <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">委托单位</label>
+                            <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">证书单位</label>
 
                             <input type="text" id="client" list="clientList" placeholder="输入或Word识别" class="w-full p-3 border rounded-xl outline-none focus:border-emerald-500 bg-slate-50/50">
 
@@ -407,7 +407,7 @@
 
             <div id="qrCanvas" class="flex justify-center items-center" style="width:320px;height:320px;margin:0 auto;"></div>
 
-            <div id="qrInfo" class="mt-4 text-left text-sm space-y-1 bg-white p-4 rounded-xl" style="font-family:SimSun,宋体,serif"></div>
+            <div id="qrInfo" class="mt-4 text-left text-sm space-y-1 bg-blue-50 p-4 rounded-xl" style="font-family:SimSun,宋体,serif"></div>
 
             <button onclick="closeQR()" class="mt-6 w-full bg-slate-200 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-300 transition">关闭</button>
 
@@ -599,7 +599,7 @@
 
                 certId: '证书编号', reportType: '报告类型', result: '检定/校准结果',
 
-                orderNumber: '委托单号', client: '委托单位', instrumentName: '仪器名称', 
+                orderNumber: '委托单号', client: '证书单位', instrumentName: '仪器名称', 
 
                 manufacturer: '制造厂', calibrationDate: '校准日期', expiryDate: '有效期至', 
 
@@ -922,7 +922,7 @@
 
                     certNo: /证书编号[：:]\s*([A-Z0-9\-]+)/i,
 
-                    client: /(?:委托单位|送检单位|客户)[：:]\s*(.+?)(?:\n|$)/,
+                    client: /(?:证书单位|委托单位|送检单位|客户)[：:]\s*(.+?)(?:\n|$)/,
 
                     instrumentName: /(?:仪器名称|设备名称|被检器具)[：:]\s*(.+?)(?:\n|$)/,
 
@@ -1017,7 +1017,7 @@
                 const resultLabel = isJianDing ? '检定结论' : '校准结论';
                 const resultText = isJianDing ? '合格' : '符合要求';
                 const infoHtml = '<div class="font-bold text-slate-700 border-b pb-2 mb-2">证书信息</div>' +
-                    (cert.client ? '<div><span class="text-slate-500">委托单位:</span> <span class="font-medium">' + cert.client + '</span></div>' : '') +
+                    (cert.client ? '<div><span class="text-slate-500">证书单位:</span> <span class="font-medium">' + cert.client + '</span></div>' : '') +
                     (cert.id && !cert.id.startsWith('TEMP_') ? '<div><span class="text-slate-500">证书号:</span> <span class="font-medium">' + cert.id + '</span></div>' : '') +
                     (cert.instrumentName ? '<div><span class="text-slate-500">仪器名称:</span> <span class="font-medium">' + cert.instrumentName + '</span></div>' : '') +
                     '<div class="pt-2 mt-2 border-t border-slate-200">' +
@@ -1038,7 +1038,7 @@
             var isSzJly = cert.unit === '深圳计量院';
     var szImg = isSzJly ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.jpg" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
             var fields = '';
-            if (cert.client && visibleFields.client !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单位</div><div style="font-weight:bold;color:#334155">' + cert.client + '</div></div>';
+            if (cert.client && visibleFields.client !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">证书单位</div><div style="font-weight:bold;color:#334155">' + cert.client + '</div></div>';
             if (cert.id && visibleFields.certId !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-weight:bold;color:#334155">' + cert.id + '</div></div>';
             if (cert.reportType && visibleFields.reportType !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">报告类型</div><div style="font-weight:bold;color:#334155">' + cert.reportType + '</div></div>';
             if (cert.instrumentName && visibleFields.instrumentName !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">仪器名称</div><div style="font-weight:bold;color:#334155">' + cert.instrumentName + '</div></div>';

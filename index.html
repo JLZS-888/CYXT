@@ -246,7 +246,7 @@
                 const raw = cert[f.id];
                 if (!raw) return;
                 const label = f.labelFn ? f.labelFn() : f.label;
-                html += '<div class="p-4 rounded-xl"><div class="text-xs text-slate-400">' + label + '</div><div class="font-bold text-slate-700">' + raw + '</div></div>';
+                html += '<div class="p-4 rounded-xl"><div class="text-xs font-bold text-slate-500">' + label + '</div><div class="font-bold text-slate-800 text-lg">' + raw + '</div></div>';
             });
             container.innerHTML = html;
 

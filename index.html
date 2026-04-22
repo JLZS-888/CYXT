@@ -242,7 +242,7 @@
                 const raw = cert[f.id];
                 if (!raw) return;
                 const label = f.labelFn ? f.labelFn() : f.label;
-                html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-slate-800 text-lg font-normal">' + raw + '</div></div>';
+                html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
             });
             container.innerHTML = html;
         }

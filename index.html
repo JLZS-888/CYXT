@@ -264,14 +264,58 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('error').classList.remove('hidden');
         }
+
+        // GitHub Raw 数据地址
+        const GH_DATA_URL = 'https://raw.githubusercontent.com/JLZS-888/CYXT/main/data/certs.json';
+
+        // 通过证书编号从 GitHub 拉取数据
+        async function fetchCertById(certId) {
+            try {
+                const res = await fetch(GH_DATA_URL);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                // 应用字段配置（如果服务端有配置）
+                if (data.fieldConfig) {
+                    FIELD_ORDER.forEach((f, i) => {
+                        fieldConfig[f] = data.fieldConfig[f] !== false;
+                    });
+                    initHeader(); // 重新初始化标题（unit 信息可能在 cert 数据里）
+                }
+                const cert = data.certs.find(c => c.id === certId);
+                if (!cert) return null;
+                // 如果证书有 unit 字段，根据它切换标题
+                if (cert.unit === 'S' || cert.unit === '深圳计量院') {
+                    document.getElementById('defaultHeader').classList.add('hidden');
+                    document.getElementById('szjlyHeader').classList.remove('hidden');
+                }
+                return cert;
+            } catch (e) {
+                console.error('fetchCertById error:', e);
+                return null;
+            }
+        }
         
         // 初始化
-        window.onload = function() {
-            const cert = parseUrlParams();
-            if (cert) {
-                renderCert(cert);
+        window.onload = async function() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            if (id) {
+                // 方案A：通过证书编号从 GitHub Raw 拉取数据（二维码极简）
+                const cert = await fetchCertById(decodeURIComponent(id));
+                if (cert) {
+                    renderCert(cert);
+                } else {
+                    showError();
+                }
             } else {
-                showError();
+                // 兼容旧方案：?d= 编码参数（Base64 JSON 或 & 分隔）
+                const cert = parseUrlParams();
+                if (cert) {
+                    renderCert(cert);
+                } else {
+                    showError();
+                }
             }
         };
     </script>

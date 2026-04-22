@@ -519,15 +519,12 @@
         
 
         // 查询页基础URL - 固定指向 GitHub Pages
-
         const QUERY_BASE_URL = 'https://jlzs-888.github.io/CYXT/index.html';
-        const GITHUB_TOKEN = localStorage.getItem('gh_pat') || '';
-        const GH_TOKEN = localStorage.getItem('gh_pat') || '';
-        const CERT_PAGE_BASE = 'https://jlzs-888.github.io/CYXT/certs';
         const GH_OWNER = 'JLZS-888';
         const GH_REPO = 'CYXT';
+        // GitHub Raw 地址（用于 index.html 查询端拉取数据）
+        const DATA_RAW_URL = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/data/certs.json';
 
-        
 
         // 从localStorage加载数据
 
@@ -804,7 +801,7 @@
             alert('保存成功！');
 
             
-            pushCertToCF(certData);
+            syncDataToGitHub();
             resetForm();
 
             document.getElementById('saveStatus').textContent = '已保存';
@@ -1000,7 +997,8 @@
             if (!cert) return alert('证书不存在');
             const modal = document.getElementById('qrModal');
             const canvas = document.getElementById('qrCanvas');
-            const certUrl = cert.url || (CERT_PAGE_BASE + '/' + id + '.html');
+            // 二维码只包含证书编号，极简
+            const certUrl = QUERY_BASE_URL + '?id=' + encodeURIComponent(cert.id);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(function() {
@@ -1024,7 +1022,7 @@
                         '<span class="text-slate-500">' + resultLabel + ':</span> ' +
                         '<span class="font-bold ' + (isJianDing ? 'text-blue-600' : 'text-emerald-600') + '">' + resultText + '</span>' +
                     '</div>' +
-                    '<div class="mt-3 pt-2 border-t border-slate-200 text-xs text-slate-400">扫描查看完整证书</div>';
+                    '<div class="mt-3 pt-2 border-t border-slate-200 text-xs text-slate-400">扫码查看完整证书</div>';
                 document.getElementById('qrInfo').innerHTML = infoHtml;
             }, 50);
         }
@@ -1060,29 +1058,51 @@
                     validHtml = '<div style="margin-top:16px;padding:16px;border-radius:12px;text-align:center;font-weight:bold;background:#fee2e2;color:#dc2626">⚠ 证书已过期</div>';
                 }
             }
-            return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>证书信息</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:SimSun,宋体,serif;background:#f8fafc;min-height:100vh;padding:16px}</style></head><body><div style="max-width:480px;margin:0 auto"><div style="border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">' + szImg + '<div style="background:#1e88e5;color:#fff;padding:24px;text-align:center"><h1 style="font-size:24px;font-weight:900;letter-spacing:8px">计量证书查询</h1></div></div><div style="background:#fff;padding:24px;border-radius:0 0 24px 24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)"'> + (visibleFields.certId !== false ? '<div style="text-align:center;padding-bottom:16px;border-bottom:1px solid #f1f5f9"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-size:24px;font-weight:900;color:#1e88e5;letter-spacing:2px">' + (cert.id || '') + '</div></div>' : '') + '<div style="display:flex;flex-direction:column;gap:8px">' + fields + '</div>' + validHtml + '</div>' + (!cert.unit || cert.unit !== '深圳计量院' ? '<div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8"><p>计量证书查询</p></div>' : '') + '</div></body></html>';
+            return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>证书信息</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:SimSun,宋体,serif;background:#f8fafc;min-height:100vh;padding:16px}</style></head><body><div style="max-width:480px;margin:0 auto"><div style="border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">' + szImg + '<div style="background:#1e88e5;color:#fff;padding:24px;text-align:center"><h1 style="font-size:24px;font-weight:900;letter-spacing:8px">计量证书查询</h1></div></div><div style="background:#fff;padding:24px;border-radius:0 0 24px 24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">' + (visibleFields.certId !== false ? '<div style="text-align:center;padding-bottom:16px;border-bottom:1px solid #f1f5f9"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-size:24px;font-weight:900;color:#1e88e5;letter-spacing:2px">' + (cert.id || '') + '</div></div>' : '') + '<div style="display:flex;flex-direction:column;gap:8px">' + fields + '</div>' + validHtml + '</div>' + (!cert.unit || cert.unit !== '深圳计量院' ? '<div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8"><p>计量证书查询</p></div>' : '') + '</div></body></html>';
         }
 
-        async function pushCertToCF(certData) {
+        // 将全部证书数据推送到 GitHub 仓库 data/certs.json
+        async function syncDataToGitHub() {
             var statusEl = document.getElementById('saveStatus');
             var pat = localStorage.getItem('gh_pat') || '';
             if (!pat) {
                 if (statusEl) { statusEl.textContent = '请先填写Token'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
                 return;
             }
-            if (statusEl) { statusEl.textContent = '上传中...'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
+            if (statusEl) { statusEl.textContent = '同步中...'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
             try {
-                var certId = certData.id || certData.certNo;
-                var cert = { id: certId, reportType: certData.reportType || '', result: certData.result || '', client: certData.client || '', instrumentName: certData.instrumentName || certData.name || '', manufacturer: certData.manufacturer || '', factoryNumber: certData.factoryNumber || '', calibrationDate: certData.calibrationDate || certData.date || '', expiryDate: certData.expiryDate || '', model: certData.model || '', orderNumber: certData.orderNumber || '', unit: certData.unit || '' };
-                var visibleFields = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null') || fieldConfig;
-                var htmlContent = buildCertPage(cert, visibleFields);
-                var path = 'certs/' + certId + '.html';
-                var base64Content = btoa(unescape(encodeURIComponent(htmlContent)));
-                // Check if file exists first
+                // 构建推送数据：只保留展示需要的字段，去掉 createdAt 等内部字段
+                var exportCerts = certs.filter(function(c) { return !c.id.startsWith('TEMP_'); }).map(function(c) {
+                    return {
+                        id: c.id,
+                        reportType: c.reportType || '',
+                        result: c.result || '',
+                        orderNumber: c.orderNumber || '',
+                        client: c.client || '',
+                        instrumentName: c.instrumentName || '',
+                        manufacturer: c.manufacturer || '',
+                        calibrationDate: c.calibrationDate || '',
+                        expiryDate: c.expiryDate || '',
+                        factoryNumber: c.factoryNumber || '',
+                        model: c.model || '',
+                        unit: c.unit || ''
+                    };
+                });
+                // 附带字段配置
+                var payload = {
+                    certs: exportCerts,
+                    fieldConfig: JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null') || fieldConfig,
+                    updatedAt: new Date().toISOString()
+                };
+                var jsonStr = JSON.stringify(payload);
+                var base64Content = btoa(unescape(encodeURIComponent(jsonStr)));
+                var path = 'data/certs.json';
+
+                // 检查文件是否已存在（需要 sha）
                 var checkRes = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
                     headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json' }
                 });
-                var body = { message: 'Deploy cert ' + certId, content: base64Content, branch: 'main' };
+                var body = { message: 'Sync certs data', content: base64Content, branch: 'main' };
                 if (checkRes.ok) {
                     var existing = await checkRes.json();
                     body.sha = existing.sha;
@@ -1093,22 +1113,15 @@
                     body: JSON.stringify(body)
                 });
                 if (putRes.ok) {
-                    var result = await putRes.json();
-                    var url = 'https://jlzs-888.github.io/' + GH_REPO + '/certs/' + certId + '.html';
-                    // Update cert url in localStorage
-                    certData.url = url;
-                    var certs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-                    var idx = certs.findIndex(function(c) { return c.id === certId; });
-                    if (idx >= 0) { certs[idx].url = url; localStorage.setItem(STORAGE_KEY, JSON.stringify(certs)); }
-                    if (statusEl) { statusEl.textContent = '已发布'; statusEl.className = 'text-[10px] bg-green-600 px-3 py-1 rounded-full font-bold'; }
+                    if (statusEl) { statusEl.textContent = '已同步到线上'; statusEl.className = 'text-[10px] bg-green-600 px-3 py-1 rounded-full font-bold'; }
                 } else {
                     var errData = await putRes.json().catch(function() { return {}; });
-                    if (statusEl) { statusEl.textContent = '发布失败'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
-                    console.error('Push failed:', putRes.status, errData);
+                    if (statusEl) { statusEl.textContent = '同步失败:' + (errData.message || putRes.status); statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
+                    console.error('Sync failed:', putRes.status, errData);
                 }
             } catch(e) {
-                console.error('Deploy error:', e);
-                if (statusEl) { statusEl.textContent = '发布出错'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
+                console.error('Sync error:', e);
+                if (statusEl) { statusEl.textContent = '同步出错'; statusEl.className = 'text-[10px] bg-red-600 px-3 py-1 rounded-full font-bold'; }
             }
         }
 
@@ -1144,7 +1157,7 @@
             document.getElementById('fact').value = cert.factoryNumber || '';
             document.getElementById('model').value = cert.model || '';
             document.getElementById('formTitle').innerText = '✏️ 修改证书详情';
-            const certUrl = cert.url || (CERT_PAGE_BASE + '/' + id + '.html');
+            const certUrl = QUERY_BASE_URL + '?id=' + encodeURIComponent(id);
             let linkDiv = document.getElementById('certUrlDisplay');
             if (!linkDiv) {
                 linkDiv = document.createElement('div');
@@ -1160,26 +1173,13 @@
 
         function delCert(id) {
             if(!confirm('删除 ' + id + ' 吗？')) return;
-            const cert = certs.find(c => c.id === id);
-            if (cert && cert.url) {
-                const path = 'certs/' + id + '.html';
-                fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                    headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json' }
-                }).then(r => r.ok ? r.json() : null).then(data => {
-                    if (data && data.sha) {
-                        fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                            method: 'DELETE',
-                            headers: { 'Authorization': 'token ' + (localStorage.getItem('gh_pat') || ''), 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: 'delete cert: ' + id, sha: data.sha })
-                        }).then(() => {}).catch(e => console.error(e));
-                    }
-                }).catch(e => console.error(e));
-            }
-            }
             certs = certs.filter(c => c.id !== id);
             saveToStorage();
             renderList();
             updateStats();
+            // 同步删除后重新推送全部数据到 GitHub
+            syncDataToGitHub();
+        }
 
         
 

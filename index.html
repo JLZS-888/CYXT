@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>计量证书查询</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -271,7 +274,7 @@
         // 通过证书编号从 GitHub 拉取数据
         async function fetchCertById(certId) {
             try {
-                const res = await fetch(GH_DATA_URL);
+                const res = await fetch(GH_DATA_URL + '?t=' + Date.now());
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 // 应用字段配置（如果服务端有配置）

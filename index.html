@@ -22,7 +22,7 @@
 <body class="bg-white min-h-screen p-4">
     <div class="max-w-lg mx-auto">
         <!-- 头部 -->
-        <div id="headerArea" class="rounded-t-3xl shadow-xl text-center overflow-hidden">
+        <div id="headerArea" class="rounded-t-3xl shadow-xl text-center overflow-hidden bg-white">
             <!-- 默认蓝色标题 -->
             <div id="defaultHeader" class="bg-[#1e88e5] text-white p-6">
                 <h1 class="text-2xl font-black tracking-widest">计量证书查询</h1>
@@ -242,7 +242,7 @@
                 const raw = cert[f.id];
                 if (!raw) return;
                 const label = f.labelFn ? f.labelFn() : f.label;
-                html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="font-bold text-slate-800 text-lg">' + raw + '</div></div>';
+                html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-slate-800 text-lg font-normal">' + raw + '</div></div>';
             });
             container.innerHTML = html;
         }

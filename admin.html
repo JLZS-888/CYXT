@@ -1032,23 +1032,24 @@
 
         
 
-        function buildCertPage(cert) {
+        function buildCertPage(cert, visibleFields) {
             var isJD = cert.reportType === '检定';
             var resultLabel = isJD ? '检定结论' : '校准结果';
             var dateLabel = isJD ? '检定日期' : '校准日期';
-            var szImg = cert.unit === '深圳计量院' ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.png" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
+            var isSzJly = cert.unit === '深圳计量院';
+    var szImg = isSzJly ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.png" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
             var fields = '';
-            if (cert.client) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单位</div><div style="font-weight:bold;color:#334155">' + cert.client + '</div></div>';
-            if (cert.id) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-weight:bold;color:#334155">' + cert.id + '</div></div>';
-            if (cert.reportType) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">报告类型</div><div style="font-weight:bold;color:#334155">' + cert.reportType + '</div></div>';
-            if (cert.instrumentName) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">仪器名称</div><div style="font-weight:bold;color:#334155">' + cert.instrumentName + '</div></div>';
-            if (cert.manufacturer) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">制造厂</div><div style="font-weight:bold;color:#334155">' + cert.manufacturer + '</div></div>';
-            if (cert.model) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">规格型号</div><div style="font-weight:bold;color:#334155">' + cert.model + '</div></div>';
-            if (cert.factoryNumber) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">出厂编号</div><div style="font-weight:bold;color:#334155">' + cert.factoryNumber + '</div></div>';
-            if (cert.orderNumber) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单号</div><div style="font-weight:bold;color:#334155">' + cert.orderNumber + '</div></div>';
-            if (cert.calibrationDate) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + dateLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.calibrationDate + '</div></div>';
-            if (cert.expiryDate) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">有效期至</div><div style="font-weight:bold;color:#334155">' + cert.expiryDate + '</div></div>';
-            if (cert.result) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + resultLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.result + '</div></div>';
+            if (cert.client && visibleFields.client !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单位</div><div style="font-weight:bold;color:#334155">' + cert.client + '</div></div>';
+            if (cert.id && visibleFields.certId !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-weight:bold;color:#334155">' + cert.id + '</div></div>';
+            if (cert.reportType && visibleFields.reportType !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">报告类型</div><div style="font-weight:bold;color:#334155">' + cert.reportType + '</div></div>';
+            if (cert.instrumentName && visibleFields.instrumentName !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">仪器名称</div><div style="font-weight:bold;color:#334155">' + cert.instrumentName + '</div></div>';
+            if (cert.manufacturer && visibleFields.manufacturer !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">制造厂</div><div style="font-weight:bold;color:#334155">' + cert.manufacturer + '</div></div>';
+            if (cert.model && visibleFields.model !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">规格型号</div><div style="font-weight:bold;color:#334155">' + cert.model + '</div></div>';
+            if (cert.factoryNumber && visibleFields.factoryNumber !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">出厂编号</div><div style="font-weight:bold;color:#334155">' + cert.factoryNumber + '</div></div>';
+            if (cert.orderNumber && visibleFields.orderNumber !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单号</div><div style="font-weight:bold;color:#334155">' + cert.orderNumber + '</div></div>';
+            if (cert.calibrationDate && visibleFields.calibrationDate !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + dateLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.calibrationDate + '</div></div>';
+            if (cert.expiryDate && visibleFields.expiryDate !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">有效期至</div><div style="font-weight:bold;color:#334155">' + cert.expiryDate + '</div></div>';
+            if (cert.result && visibleFields.result !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + resultLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.result + '</div></div>';
             var validHtml = '';
             if (cert.expiryDate) {
                 var today = new Date(); today.setHours(0,0,0,0);
@@ -1060,7 +1061,7 @@
                     validHtml = '<div style="margin-top:16px;padding:16px;border-radius:12px;text-align:center;font-weight:bold;background:#fee2e2;color:#dc2626">⚠ 证书已过期</div>';
                 }
             }
-            return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>计量证书 - ' + (cert.id || '') + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:SimSun,宋体,serif;background:#f8fafc;min-height:100vh;padding:16px}</style></head><body><div style="max-width:480px;margin:0 auto"><div style="border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">' + szImg + '<div style="background:#1e88e5;color:#fff;padding:24px;text-align:center"><h1 style="font-size:24px;font-weight:900;letter-spacing:8px">计量证书查询</h1></div></div><div style="background:#fff;padding:24px;border-radius:0 0 24px 24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)"><div style="text-align:center;padding-bottom:16px;border-bottom:1px solid #f1f5f9"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-size:24px;font-weight:900;color:#1e88e5;letter-spacing:2px">' + (cert.id || '') + '</div></div><div style="display:flex;flex-direction:column;gap:8px">' + fields + '</div>' + validHtml + '</div><div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8"><p>计量证书查询</p></div></div></body></html>';
+            return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>证书信息</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:SimSun,宋体,serif;background:#f8fafc;min-height:100vh;padding:16px}</style></head><body><div style="max-width:480px;margin:0 auto"><div style="border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">' + szImg + '<div style="background:#1e88e5;color:#fff;padding:24px;text-align:center"><h1 style="font-size:24px;font-weight:900;letter-spacing:8px">计量证书查询</h1></div></div><div style="background:#fff;padding:24px;border-radius:0 0 24px 24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)"><div style="text-align:center;padding-bottom:16px;border-bottom:1px solid #f1f5f9"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-size:24px;font-weight:900;color:#1e88e5;letter-spacing:2px">' + (cert.id || '') + '</div></div><div style="display:flex;flex-direction:column;gap:8px">' + fields + '</div>' + validHtml + '</div><div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8"><p>计量证书查询</p></div></div></body></html>';
         }
 
         async function pushCertToCF(certData) {
@@ -1074,7 +1075,8 @@
             try {
                 var certId = certData.id || certData.certNo;
                 var cert = { id: certId, reportType: certData.reportType || '', result: certData.result || '', client: certData.client || '', instrumentName: certData.instrumentName || certData.name || '', manufacturer: certData.manufacturer || '', factoryNumber: certData.factoryNumber || '', calibrationDate: certData.calibrationDate || certData.date || '', expiryDate: certData.expiryDate || '', model: certData.model || '', orderNumber: certData.orderNumber || '', unit: certData.unit || '' };
-                var htmlContent = buildCertPage(cert);
+                var visibleFields = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null') || fieldConfig;
+                var htmlContent = buildCertPage(cert, visibleFields);
                 var path = 'certs/' + certId + '.html';
                 var base64Content = btoa(unescape(encodeURIComponent(htmlContent)));
                 // Check if file exists first

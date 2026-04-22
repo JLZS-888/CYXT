@@ -1076,7 +1076,7 @@
                 var cert = { id: certId, reportType: certData.reportType || '', result: certData.result || '', client: certData.client || '', instrumentName: certData.instrumentName || certData.name || '', manufacturer: certData.manufacturer || '', factoryNumber: certData.factoryNumber || '', calibrationDate: certData.calibrationDate || certData.date || '', expiryDate: certData.expiryDate || '', model: certData.model || '', orderNumber: certData.orderNumber || '', unit: certData.unit || '' };
                 var htmlContent = buildCertPage(cert);
                 var path = 'certs/' + certId + '.html';
-                var base64Content = Buffer.from(htmlContent, 'utf-8').toString('base64');
+                var base64Content = btoa(unescape(encodeURIComponent(htmlContent)));
                 // Check if file exists first
                 var checkRes = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
                     headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json' }

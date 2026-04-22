@@ -1037,7 +1037,7 @@
             var resultLabel = isJD ? '检定结论' : '校准结果';
             var dateLabel = isJD ? '检定日期' : '校准日期';
             var isSzJly = cert.unit === '深圳计量院';
-    var szImg = isSzJly ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.png" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
+    var szImg = isSzJly ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.jpg" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
             var fields = '';
             if (cert.client && visibleFields.client !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">委托单位</div><div style="font-weight:bold;color:#334155">' + cert.client + '</div></div>';
             if (cert.id && visibleFields.certId !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">证书编号</div><div style="font-weight:bold;color:#334155">' + cert.id + '</div></div>';

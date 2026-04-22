@@ -1225,6 +1225,13 @@
                 if (putRes.ok) {
                     if (statusEl) { statusEl.textContent = '已同步(' + exportCerts.length + '条)'; statusEl.className = 'text-[10px] bg-green-600 px-3 py-1 rounded-full font-bold'; }
                     if (detailEl) { detailEl.textContent = '✅ 同步成功！扫码即可查询'; setTimeout(function() { detailEl.classList.add('hidden'); }, 5000); }
+                    // 自动刷新 JSDelivr CDN 缓存
+                    try {
+                        await fetch('https://purge.jsdelivr.net/gh/' + GH_OWNER + '/' + GH_REPO + '@main/data/certs.json');
+                        console.log('JSDelivr CDN cache purged');
+                    } catch(purgeErr) {
+                        console.warn('CDN purge failed:', purgeErr);
+                    }
                 } else {
                     var errData = await putRes.json().catch(function() { return {}; });
                     var errMsg = errData.message || ('HTTP ' + putRes.status);

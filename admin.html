@@ -1122,10 +1122,12 @@
                         }).then(() => {}).catch(e => console.error(e));
                     }
                 }).catch(e => console.error(e));
+            }
             certs = certs.filter(c => c.id !== id);
             saveToStorage();
             renderList();
             updateStats();
+        }
 
         
 

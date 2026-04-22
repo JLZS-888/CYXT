@@ -256,10 +256,10 @@
             }
         }
 
-        // 数据源列表（按优先级排序，JSDelivr 国内最快）
+        // 数据源列表（GitHub Pages 优先，JSDelivr 有 CDN 缓存延迟作为备用）
         const GH_DATA_URLS = [
-            'https://cdn.jsdelivr.net/gh/JLZS-888/CYXT@main/data/certs.json',
             'https://jlzs-888.github.io/CYXT/data/certs.json',
+            'https://cdn.jsdelivr.net/gh/JLZS-888/CYXT@main/data/certs.json',
             'https://raw.githubusercontent.com/JLZS-888/CYXT/main/data/certs.json'
         ];
 

@@ -267,7 +267,7 @@
         function fetchWithTimeout(url, timeout) {
             var controller = new AbortController();
             var timer = setTimeout(function() { controller.abort(); }, timeout);
-            return fetch(url, { signal: controller.signal }).then(function(res) {
+            return fetch(url, { signal: controller.signal, cache: 'no-store' }).then(function(res) {
                 clearTimeout(timer);
                 return res;
             }).catch(function(err) {

@@ -96,6 +96,10 @@
         
         // 字段顺序（与 cfgMask 对应）
         const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+
+        // ===== 调试日志 =====
+        const _dbg = [];
+        function dbg(msg) { console.log('[CYXT]', msg); _dbg.push(msg); }
         
         // 解析URL参数
         function parseUrlParams() {
@@ -262,43 +266,72 @@
             }
         }
         
-        // 显示错误
-        function showError() {
+        // 显示错误（带调试信息）
+        function showError(reason) {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('error').classList.remove('hidden');
+            if (reason) {
+                dbg('showError: ' + reason);
+            }
         }
 
-        // GitHub Raw 数据地址（国内可能较慢，加多个备用源）
+        // 数据源列表（按优先级排序，JSDelivr 国内最快）
         const GH_DATA_URLS = [
+            'https://cdn.jsdelivr.net/gh/JLZS-888/CYXT@main/data/certs.json',
             'https://jlzs-888.github.io/CYXT/data/certs.json',
             'https://raw.githubusercontent.com/JLZS-888/CYXT/main/data/certs.json'
         ];
 
         // 带超时的 fetch
         function fetchWithTimeout(url, timeout) {
-            return Promise.race([
-                fetch(url),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-            ]);
+            var controller = new AbortController();
+            var timer = setTimeout(function() { controller.abort(); }, timeout);
+            return fetch(url, { signal: controller.signal }).then(function(res) {
+                clearTimeout(timer);
+                return res;
+            }).catch(function(err) {
+                clearTimeout(timer);
+                throw err;
+            });
         }
 
-        // 通过证书编号从 GitHub 拉取数据（多源容错）
+        // 通过证书编号从远程拉取数据（多源容错）
         async function fetchCertById(certId) {
             var lastErr = null;
             for (var i = 0; i < GH_DATA_URLS.length; i++) {
+                var url = GH_DATA_URLS[i] + '?t=' + Date.now();
+                dbg('尝试数据源 ' + (i+1) + ': ' + url);
                 try {
-                    var url = GH_DATA_URLS[i] + '?t=' + Date.now();
-                    var res = await fetchWithTimeout(url, 8000);
+                    var res = await fetchWithTimeout(url, 6000);
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     var data = await res.json();
+                    dbg('数据源 ' + (i+1) + ' 成功，共 ' + (data.certs ? data.certs.length : 0) + ' 条记录');
                     // 应用字段配置（如果服务端有配置）
                     if (data.fieldConfig) {
                         FIELD_ORDER.forEach(function(f) {
                             fieldConfig[f] = data.fieldConfig[f] !== false;
                         });
                     }
-                    var cert = data.certs.find(function(c) { return c.id === certId; });
-                    if (!cert) return null;
+                    if (!data.certs || !data.certs.length) {
+                        dbg('certs 数组为空');
+                        return null;
+                    }
+                    // 列出所有 ID 方便调试
+                    var allIds = data.certs.map(function(c) { return c.id; });
+                    dbg('所有证书ID: ' + allIds.join(', '));
+                    dbg('查找ID: "' + certId + '"');
+                    var cert = null;
+                    for (var j = 0; j < data.certs.length; j++) {
+                        if (data.certs[j].id === certId) {
+                            cert = data.certs[j];
+                            break;
+                        }
+                    }
+                    if (!cert) {
+                        dbg('未找到匹配的证书');
+                        return null;
+                    }
+                    dbg('找到证书: ' + cert.id);
                     // 如果证书有 unit 字段，根据它切换标题
                     if (cert.unit === 'S' || cert.unit === '深圳计量院') {
                         document.getElementById('defaultHeader').classList.add('hidden');
@@ -307,10 +340,10 @@
                     return cert;
                 } catch (e) {
                     lastErr = e;
-                    console.warn('Source ' + (i+1) + ' failed:', e.message);
+                    dbg('数据源 ' + (i+1) + ' 失败: ' + e.message);
                 }
             }
-            console.error('All sources failed');
+            dbg('所有数据源均失败');
             return null;
         }
         
@@ -319,13 +352,15 @@
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
 
+            dbg('页面加载完成，URL参数: id=' + id);
+
             if (id) {
-                // 方案A：通过证书编号从 GitHub Raw 拉取数据（二维码极简）
+                // 通过证书编号从远程拉取数据（二维码极简）
                 const cert = await fetchCertById(decodeURIComponent(id));
                 if (cert) {
                     renderCert(cert);
                 } else {
-                    showError();
+                    showError('证书 "' + decodeURIComponent(id) + '" 未找到');
                 }
             } else {
                 // 兼容旧方案：?d= 编码参数（Base64 JSON 或 & 分隔）
@@ -333,7 +368,7 @@
                 if (cert) {
                     renderCert(cert);
                 } else {
-                    showError();
+                    showError('无有效参数');
                 }
             }
         };

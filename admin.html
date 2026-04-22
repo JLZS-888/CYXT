@@ -1073,18 +1073,17 @@
                 if (detailEl) { detailEl.classList.remove('hidden'); detailEl.textContent = '错误：未配置 GitHub Token，请在下方填写后重试'; }
                 return;
             }
-            // 检查有效证书数量
-            var validCerts = certs.filter(function(c) { return !c.id.startsWith('TEMP_'); });
-            if (validCerts.length === 0) {
-                if (statusEl) { statusEl.textContent = '无有效证书'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
-                if (detailEl) { detailEl.classList.remove('hidden'); detailEl.textContent = '提示：当前没有带证书编号的记录（TEMP_开头的不会同步）'; }
+            // 检查证书数量
+            if (certs.length === 0) {
+                if (statusEl) { statusEl.textContent = '无证书数据'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
+                if (detailEl) { detailEl.classList.remove('hidden'); detailEl.textContent = '提示：当前没有证书记录'; }
                 return;
             }
-            if (statusEl) { statusEl.textContent = '同步中(' + validCerts.length + '条)...'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
-            if (detailEl) { detailEl.classList.remove('hidden'); detailEl.textContent = '正在推送 ' + validCerts.length + ' 条证书到 GitHub...'; }
+            if (statusEl) { statusEl.textContent = '同步中(' + certs.length + '条)...'; statusEl.className = 'text-[10px] bg-amber-600 px-3 py-1 rounded-full font-bold'; }
+            if (detailEl) { detailEl.classList.remove('hidden'); detailEl.textContent = '正在推送 ' + certs.length + ' 条证书到 GitHub...'; }
             try {
                 // 构建推送数据：只保留展示需要的字段，去掉 createdAt 等内部字段
-                var exportCerts = validCerts.map(function(c) {
+                var exportCerts = certs.map(function(c) {
                     return {
                         id: c.id,
                         reportType: c.reportType || '',

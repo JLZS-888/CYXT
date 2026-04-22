@@ -268,34 +268,50 @@
             document.getElementById('error').classList.remove('hidden');
         }
 
-        // GitHub Raw 数据地址
-        const GH_DATA_URL = 'https://raw.githubusercontent.com/JLZS-888/CYXT/main/data/certs.json';
+        // GitHub Raw 数据地址（国内可能较慢，加多个备用源）
+        const GH_DATA_URLS = [
+            'https://jlzs-888.github.io/CYXT/data/certs.json',
+            'https://raw.githubusercontent.com/JLZS-888/CYXT/main/data/certs.json'
+        ];
 
-        // 通过证书编号从 GitHub 拉取数据
+        // 带超时的 fetch
+        function fetchWithTimeout(url, timeout) {
+            return Promise.race([
+                fetch(url),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+            ]);
+        }
+
+        // 通过证书编号从 GitHub 拉取数据（多源容错）
         async function fetchCertById(certId) {
-            try {
-                const res = await fetch(GH_DATA_URL + '?t=' + Date.now());
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                // 应用字段配置（如果服务端有配置）
-                if (data.fieldConfig) {
-                    FIELD_ORDER.forEach((f, i) => {
-                        fieldConfig[f] = data.fieldConfig[f] !== false;
-                    });
-                    initHeader(); // 重新初始化标题（unit 信息可能在 cert 数据里）
+            var lastErr = null;
+            for (var i = 0; i < GH_DATA_URLS.length; i++) {
+                try {
+                    var url = GH_DATA_URLS[i] + '?t=' + Date.now();
+                    var res = await fetchWithTimeout(url, 8000);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    var data = await res.json();
+                    // 应用字段配置（如果服务端有配置）
+                    if (data.fieldConfig) {
+                        FIELD_ORDER.forEach(function(f) {
+                            fieldConfig[f] = data.fieldConfig[f] !== false;
+                        });
+                    }
+                    var cert = data.certs.find(function(c) { return c.id === certId; });
+                    if (!cert) return null;
+                    // 如果证书有 unit 字段，根据它切换标题
+                    if (cert.unit === 'S' || cert.unit === '深圳计量院') {
+                        document.getElementById('defaultHeader').classList.add('hidden');
+                        document.getElementById('szjlyHeader').classList.remove('hidden');
+                    }
+                    return cert;
+                } catch (e) {
+                    lastErr = e;
+                    console.warn('Source ' + (i+1) + ' failed:', e.message);
                 }
-                const cert = data.certs.find(c => c.id === certId);
-                if (!cert) return null;
-                // 如果证书有 unit 字段，根据它切换标题
-                if (cert.unit === 'S' || cert.unit === '深圳计量院') {
-                    document.getElementById('defaultHeader').classList.add('hidden');
-                    document.getElementById('szjlyHeader').classList.remove('hidden');
-                }
-                return cert;
-            } catch (e) {
-                console.error('fetchCertById error:', e);
-                return null;
             }
+            console.error('All sources failed');
+            return null;
         }
         
         // 初始化

@@ -509,6 +509,7 @@
         
 
         let certs = [];
+        let editingId = null; // 正在编辑的证书原始 ID
 
         let fieldConfig = {
 
@@ -748,9 +749,8 @@
 
         async function saveCert() {
 
-            const certNo = document.getElementById('certNo').value.trim().toUpperCase();
-
-            const id = certNo || 'TEMP_' + Date.now();
+            // 编辑模式：保留原始 ID，确保二维码不变
+            const id = editingId || document.getElementById('certNo').value.trim().toUpperCase() || 'TEMP_' + Date.now();
 
             
 
@@ -854,6 +854,7 @@
             updateResult();
 
             document.getElementById('formTitle').innerText = '📝 录入证书详情';
+            editingId = null; // 退出编辑模式
 
         }
 
@@ -1263,6 +1264,7 @@
         function editCert(id) {
             const cert = certs.find(c => c.id === id);
             if (!cert) return;
+            editingId = id; // 记录正在编辑的证书原始 ID
             document.getElementById('reportType').value = cert.reportType || '校准';
             document.getElementById('unit').value = cert.unit || '';
             updateDateLabel();

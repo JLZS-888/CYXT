@@ -531,13 +531,24 @@
 
         
 
-        // 查询页基础URL - 固定指向 GitHub Pages
-        const QUERY_BASE_URL = 'https://jlzs-888.github.io/CYXT/index.html';
+        // 查询页基础URL - 省略 index.html 缩短二维码URL长度
+        const QUERY_BASE_URL = 'https://jlzs-888.github.io/CYXT/';
         const GH_OWNER = 'JLZS-888';
         const GH_REPO = 'CYXT';
         // GitHub Raw 地址（用于 index.html 查询端拉取数据）
         const DATA_RAW_URL = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/data/certs.json';
 
+
+        // 生成短ID（避免二维码过于密集）
+        function genShortId() {
+            var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 去掉易混淆的 I,L,O,0,1
+            var id;
+            do {
+                id = '';
+                for (var i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
+            } while (certs.some(c => c.id === id));
+            return id;
+        }
 
         // 从localStorage加载数据
 
@@ -750,7 +761,7 @@
         async function saveCert() {
 
             // 编辑模式：保留原始 ID，确保二维码不变
-            const id = editingId || document.getElementById('certNo').value.trim().toUpperCase() || 'TEMP_' + Date.now();
+            const id = editingId || document.getElementById('certNo').value.trim().toUpperCase() || genShortId();
 
             
 
@@ -1018,7 +1029,7 @@
                     height: 320,
                     colorDark: '#000000',
                     colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.L
+                    correctLevel: QRCode.CorrectLevel.M
                 });
                 const isJianDing = cert.reportType === '检定';
                 const resultLabel = isJianDing ? '检定结论' : '校准结论';

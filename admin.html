@@ -1016,9 +1016,9 @@
             if (!cert) return alert('证书不存在');
             const modal = document.getElementById('qrModal');
             const canvas = document.getElementById('qrCanvas');
-            // 二维码只包含证书编号，极简
-            let certUrl = QUERY_BASE_URL + '?id=' + encodeURIComponent(cert.id);
-            if (cert.unit === '深圳计量院' || cert.unit === 'S') certUrl += '&u=S';
+            // 二维码用 hash 格式（更短更稀疏）：#ID 或 #ID&S
+            let certUrl = QUERY_BASE_URL + '#' + cert.id;
+            if (cert.unit === '深圳计量院' || cert.unit === 'S') certUrl += '&S';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(function() {
@@ -1291,7 +1291,7 @@
             document.getElementById('fact').value = cert.factoryNumber || '';
             document.getElementById('model').value = cert.model || '';
             document.getElementById('formTitle').innerText = '✏️ 修改证书详情';
-            const certUrl = QUERY_BASE_URL + '?id=' + encodeURIComponent(id);
+            const certUrl = QUERY_BASE_URL + '#' + id;
             let linkDiv = document.getElementById('certUrlDisplay');
             if (!linkDiv) {
                 linkDiv = document.createElement('div');

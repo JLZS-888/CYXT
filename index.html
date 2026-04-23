@@ -265,13 +265,14 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('certInfo').classList.remove('hidden');
 
-            // 顶部大编号（无编号时不显示整块）
+            // 顶部大编号（优先显示证书编号certNo，其次显示id）
+            const displayCertNo = cert.certNo || cert.id || '';
             const topCertId = document.getElementById('certId');
             const topCertIdSection = topCertId.closest('.text-center');
             if (topCertIdSection) {
-                topCertIdSection.style.display = (fieldConfig.certId && cert.id) ? 'block' : 'none';
+                topCertIdSection.style.display = (fieldConfig.certId && displayCertNo) ? 'block' : 'none';
             }
-            topCertId.textContent = cert.id || '';
+            topCertId.textContent = displayCertNo;
 
             // 动态构建单列卡片（全部黑色）
             const FIELD_DEFS = [
@@ -293,7 +294,9 @@
             let html = '';
             FIELD_DEFS.forEach(f => {
                 if (!f.show) return;
-                const raw = cert[f.id];
+                // certIdInline 映射到 certNo 字段
+                var raw = cert[f.id];
+                if (f.id === 'certIdInline') raw = cert.certNo || cert.id;
                 if (!raw) return;
                 const label = f.labelFn ? f.labelFn() : f.label;
                 html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';

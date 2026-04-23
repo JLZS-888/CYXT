@@ -760,14 +760,15 @@
 
         async function saveCert() {
 
-            // 编辑模式：保留原始 ID，确保二维码不变
-            const id = editingId || document.getElementById('certNo').value.trim().toUpperCase() || genShortId();
-
+            // ID 永远用短ID，保证二维码稀疏；证书编号存到 certNo 字段
+            const id = editingId || genShortId();
+            const certNo = document.getElementById('certNo').value.trim().toUpperCase();
             
 
             const certData = {
 
                 id: id,
+                certNo: certNo || '',
 
                 unit: document.getElementById('unit').value,
 

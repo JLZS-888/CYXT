@@ -428,10 +428,22 @@
         
         // 初始化
         window.onload = async function() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+            // 支持 ?id=xxx 和 #xxx 两种格式，#xxx 更短适合二维码
+            var params = new URLSearchParams(window.location.search);
+            var id = params.get('id') || params.get('u');
+            var hash = window.location.hash;
+            if (!id && hash && hash.length > 1) {
+                // #xxx 或 #xxx&S
+                var hashPart = hash.substring(1);
+                var parts = hashPart.split('&');
+                id = parts[0];
+                // 如果 hash 里带 &S 标记深圳计量院
+                if (parts.length > 1 && (parts[1] === 'S' || parts[1] === 's')) {
+                    window.__hashUnit = 'S';
+                }
+            }
 
-            dbg('页面加载完成，URL参数: id=' + id);
+            dbg('页面加载完成，证书ID: ' + id);
 
             if (id) {
                 // 6秒总超时兜底（防止所有源都挂但 promise 永远不 resolve）
@@ -451,6 +463,10 @@
                 window.__certLoaded = true;
 
                 if (cert) {
+                    // hash 模式下，根据 hashUnit 补充 unit 信息
+                    if (window.__hashUnit === 'S' && !cert.unit) {
+                        cert.unit = 'S';
+                    }
                     renderCert(cert);
                 } else {
                     if (!_anySourceOk) {

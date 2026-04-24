@@ -1023,77 +1023,135 @@
             orderNumber:    ['委托单号', '委托编号', '任务单号', '单号']
         };
 
+        // 单值字段：整批证书共用的字段（关键词单独一行，值在下一行）
+        var SINGLE_VALUE_FIELDS = ['client'];
+
+        // 多值字段：每份证书独立的字段（关键词在表头行，数据在下面多行）
+        var MULTI_VALUE_FIELDS = ['certNo', 'instrumentName', 'manufacturer', 'model', 'factoryNumber', 'calibrationDate', 'orderNumber'];
+
+        // 精确匹配关键词（优先级高，避免"编号"冲突）
+        var EXACT_KEYWORDS = {
+            certNo:         ['证书编号', '证书号'],
+            factoryNumber:  ['出厂编号', '出厂号']
+        };
+
         // 临时存储批量解析结果
         var batchCerts = [];
 
-        // 从前N行扫描关键词行（表头），关键词所在列即为该字段的数据列
-        // 返回 { keywordRow: 0, dataStartRow: 1, mapping: { certNo: 0, client: 1, ... } } 或 null
-        function detectColumnMapping(rows) {
-            var maxSearch = Math.min(rows.length, 20);
-            // 精确匹配关键词列表（优先级高）
-            var EXACT_KEYWORDS = {
-                certNo:         ['证书编号', '证书号'],
-                factoryNumber:  ['出厂编号', '出厂号']
-            };
+        // 检查单元格是否匹配某个字段的关键词
+        function matchField(cellVal, field) {
+            cellVal = String(cellVal || '').trim();
+            if (!cellVal) return false;
+            // 精确匹配
+            if (EXACT_KEYWORDS[field]) {
+                for (var k = 0; k < EXACT_KEYWORDS[field].length; k++) {
+                    if (cellVal === EXACT_KEYWORDS[field][k]) return true;
+                }
+            }
+            // 模糊匹配
+            var keywords = EXCEL_KEYWORDS[field] || [];
+            for (var k = 0; k < keywords.length; k++) {
+                if (cellVal.indexOf(keywords[k]) >= 0) return true;
+            }
+            return false;
+        }
 
-            for (var h = 0; h < maxSearch; h++) {
-                var row = rows[h];
-                var exactMapping = {};
-                var fuzzyMapping = {};
+        // 检查一行是否只包含一个关键词（单值字段行）
+        // 返回匹配的字段名或 null
+        function detectSingleFieldRow(row) {
+            var matchedField = null;
+            var nonEmptyCount = 0;
+            for (var col = 0; col < row.length; col++) {
+                var cellVal = String(row[col] || '').trim();
+                if (!cellVal) continue;
+                nonEmptyCount++;
+                if (nonEmptyCount > 1) return null; // 多个非空单元格，不是单值行
+                // 检查是否匹配某个单值字段
+                for (var i = 0; i < SINGLE_VALUE_FIELDS.length; i++) {
+                    var field = SINGLE_VALUE_FIELDS[i];
+                    if (matchField(cellVal, field)) {
+                        matchedField = field;
+                        break;
+                    }
+                }
+            }
+            return matchedField;
+        }
 
+        // 解析 Excel，支持混合布局
+        // 单值字段：关键词单独一行，值在下一行
+        // 多值字段：关键词横向排列在表头行，数据在下面多行（一行=一份证书）
+        function parseExcelHybrid(rows) {
+            var singleValues = {};    // { client: '深圳某某公司' }
+            var columnMapping = {};   // { certNo: 0, instrumentName: 2, ... }
+            var dataStartRow = -1;
+            var maxSearch = Math.min(rows.length, 30);
+
+            var r = 0;
+            while (r < maxSearch) {
+                var row = rows[r];
+
+                // 检查是否为单值字段行（如"委托单位"单独一行）
+                var singleField = detectSingleFieldRow(row);
+                if (singleField) {
+                    // 值在下一行
+                    if (r + 1 < rows.length) {
+                        var nextRow = rows[r + 1];
+                        // 取下一行的所有非空内容拼接
+                        var valParts = [];
+                        for (var c = 0; c < nextRow.length; c++) {
+                            var v = String(nextRow[c] || '').trim();
+                            if (v) valParts.push(v);
+                        }
+                        singleValues[singleField] = valParts.join(' ');
+                        r += 2; // 跳过关键词行和值行
+                    } else {
+                        r++;
+                    }
+                    continue;
+                }
+
+                // 检查是否为多值表头行（包含多个多值字段关键词）
+                var headerFilled = 0;
                 for (var col = 0; col < row.length; col++) {
                     var cellVal = String(row[col] || '').trim();
                     if (!cellVal) continue;
-
-                    // 第一轮：精确匹配（数据列 = 关键词所在列本身）
-                    for (var field in EXACT_KEYWORDS) {
-                        if (exactMapping[field] !== undefined) continue;
-                        var exactKws = EXACT_KEYWORDS[field];
-                        for (var k = 0; k < exactKws.length; k++) {
-                            if (cellVal === exactKws[k]) {
-                                exactMapping[field] = col;
-                                break;
-                            }
-                        }
-                    }
-
-                    // 第二轮：模糊匹配（仅未精确匹配的字段）
-                    for (var field in EXCEL_KEYWORDS) {
-                        if (exactMapping[field] !== undefined) continue;
-                        if (fuzzyMapping[field] !== undefined) continue;
-                        var keywords = EXCEL_KEYWORDS[field];
-                        for (var k = 0; k < keywords.length; k++) {
-                            if (cellVal.indexOf(keywords[k]) >= 0) {
-                                fuzzyMapping[field] = col;
-                                break;
-                            }
+                    for (var i = 0; i < MULTI_VALUE_FIELDS.length; i++) {
+                        var field = MULTI_VALUE_FIELDS[i];
+                        if (columnMapping[field] !== undefined) continue;
+                        if (matchField(cellVal, field)) {
+                            columnMapping[field] = col;
+                            headerFilled++;
+                            break;
                         }
                     }
                 }
 
-                // 合并：精确优先
-                var mapping = {};
-                for (var f in fuzzyMapping) mapping[f] = fuzzyMapping[f];
-                for (var f in exactMapping) mapping[f] = exactMapping[f];
-
-                var filled = Object.keys(mapping).length;
-                if (filled >= 2) {
-                    return {
-                        keywordRow: h,
-                        dataStartRow: h + 1,
-                        mapping: mapping,
-                        matchedFields: filled
-                    };
+                if (headerFilled >= 2) {
+                    // 找到表头行，数据从下一行开始
+                    dataStartRow = r + 1;
+                    break;
                 }
+
+                r++;
             }
-            return null;
+
+            if (dataStartRow < 0 || Object.keys(columnMapping).length < 2) {
+                return null; // 未找到有效表头
+            }
+
+            return {
+                singleValues: singleValues,
+                columnMapping: columnMapping,
+                dataStartRow: dataStartRow
+            };
         }
 
         // 从一行数据中提取证书信息
-        function extractCertFromRow(row, mapping) {
+        function extractCertFromRow(row, columnMapping, singleValues) {
             var getValue = function(field) {
-                if (mapping[field] === undefined) return '';
-                var val = row[mapping[field]];
+                if (columnMapping[field] === undefined) return '';
+                var val = row[columnMapping[field]];
                 if (val === undefined || val === null) return '';
                 return String(val).trim();
             };
@@ -1131,9 +1189,13 @@
                     expiryDate = cd.toISOString().split('T')[0];
                 } catch(e) {}
             }
+
+            // 单值字段（如 client）优先用单值结果，没有则从列映射取
+            var clientVal = singleValues.client || getValue('client');
+
             return {
                 certNo: getValue('certNo'),
-                client: getValue('client'),
+                client: clientVal,
                 instrumentName: getValue('instrumentName'),
                 manufacturer: getValue('manufacturer'),
                 model: getValue('model'),
@@ -1174,14 +1236,15 @@
                     return;
                 }
 
-                // 策略：在前20行内搜索关键词行，关键词右侧列=数据列
-                var result = detectColumnMapping(rows);
+                // 混合解析：支持单值字段（委托单位等单独一行）+ 多值表头行
+                var result = parseExcelHybrid(rows);
                 if (!result) {
-                    statusEl.textContent = '✗ 未识别到关键词（未找到证书编号、仪器名称等）';
+                    statusEl.textContent = '✗ 未识别到表头（未找到证书编号、仪器名称等关键词列）';
                     return;
                 }
 
-                var mapping = result.mapping;
+                var columnMapping = result.columnMapping;
+                var singleValues = result.singleValues;
                 var dataStartRow = result.dataStartRow;
 
                 // 提取数据行
@@ -1190,8 +1253,8 @@
                     var row = rows[r];
                     // 跳过空行：检查所有映射的数据列是否都为空
                     var allFieldsEmpty = true;
-                    for (var field in mapping) {
-                        var colIdx = mapping[field];
+                    for (var field in columnMapping) {
+                        var colIdx = columnMapping[field];
                         var cellVal = (colIdx < row.length) ? String(row[colIdx] || '').trim() : '';
                         if (cellVal !== '') {
                             allFieldsEmpty = false;
@@ -1199,7 +1262,7 @@
                         }
                     }
                     if (allFieldsEmpty) continue;
-                    var cert = extractCertFromRow(row, mapping);
+                    var cert = extractCertFromRow(row, columnMapping, singleValues);
                     if (isDataValidRow(cert)) {
                         batchCerts.push(cert);
                     }
@@ -1210,7 +1273,11 @@
                     return;
                 }
 
-                statusEl.textContent = '✓ 识别到 ' + batchCerts.length + ' 条证书，请预览确认';
+                var extraInfo = '';
+                if (singleValues.client) {
+                    extraInfo = '，委托单位: ' + singleValues.client;
+                }
+                statusEl.textContent = '✓ 识别到 ' + batchCerts.length + ' 条证书' + extraInfo + '，请预览确认';
                 renderBatchPreview();
 
             } catch (e) {

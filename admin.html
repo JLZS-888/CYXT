@@ -1056,26 +1056,27 @@
             return false;
         }
 
-        // 检查一行是否只包含一个关键词（单值字段行）
-        // 返回匹配的字段名或 null
+        // 检查一行是否包含单值字段关键词
+        // 返回 { field, col, sameRow: true/false } 或 null
+        // sameRow=true 表示值在同一行后面，false 表示值在下一行
         function detectSingleFieldRow(row) {
-            var matchedField = null;
-            var nonEmptyCount = 0;
             for (var col = 0; col < row.length; col++) {
                 var cellVal = String(row[col] || '').trim();
                 if (!cellVal) continue;
-                nonEmptyCount++;
-                if (nonEmptyCount > 1) return null; // 多个非空单元格，不是单值行
-                // 检查是否匹配某个单值字段
                 for (var i = 0; i < SINGLE_VALUE_FIELDS.length; i++) {
                     var field = SINGLE_VALUE_FIELDS[i];
                     if (matchField(cellVal, field)) {
-                        matchedField = field;
-                        break;
+                        // 检查同一行后面是否有值
+                        var sameRowVal = '';
+                        for (var c = col + 1; c < row.length; c++) {
+                            var v = String(row[c] || '').trim();
+                            if (v) { sameRowVal = v; break; }
+                        }
+                        return { field: field, col: col, hasSameRowValue: !!sameRowVal, sameRowValue: sameRowVal };
                     }
                 }
             }
-            return matchedField;
+            return null;
         }
 
         // 解析 Excel，支持混合布局
@@ -1091,22 +1092,27 @@
             while (r < maxSearch) {
                 var row = rows[r];
 
-                // 检查是否为单值字段行（如"委托单位"单独一行）
+                // 检查是否为单值字段行（如"委托单位"）
                 var singleField = detectSingleFieldRow(row);
                 if (singleField) {
-                    // 值在下一行
-                    if (r + 1 < rows.length) {
-                        var nextRow = rows[r + 1];
-                        // 取下一行的所有非空内容拼接
-                        var valParts = [];
-                        for (var c = 0; c < nextRow.length; c++) {
-                            var v = String(nextRow[c] || '').trim();
-                            if (v) valParts.push(v);
-                        }
-                        singleValues[singleField] = valParts.join(' ');
-                        r += 2; // 跳过关键词行和值行
+                    if (singleField.hasSameRowValue) {
+                        // 值在同一行后面（如 A列="委托单位"，B列="深圳某某公司"）
+                        singleValues[singleField.field] = singleField.sameRowValue;
+                        r += 1;
                     } else {
-                        r++;
+                        // 值在下一行
+                        if (r + 1 < rows.length) {
+                            var nextRow = rows[r + 1];
+                            var valParts = [];
+                            for (var c = 0; c < nextRow.length; c++) {
+                                var v = String(nextRow[c] || '').trim();
+                                if (v) valParts.push(v);
+                            }
+                            singleValues[singleField.field] = valParts.join(' ');
+                            r += 2;
+                        } else {
+                            r++;
+                        }
                     }
                     continue;
                 }

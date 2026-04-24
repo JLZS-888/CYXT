@@ -117,8 +117,8 @@
         </div>
         
         <!-- 底部图片（仅深圳计量院显示） -->
-        <div id="szjlyBottomImg" class="hidden mt-4">
-            <img src="images/qr-bottom.jpg" alt="" class="w-full block">
+        <div id="szjlyBottomImg" class="hidden" style="margin-top:20px;">
+            <img src="images/qr-bottom.jpg" alt="" style="width:100%;display:block;">
         </div>
     </div>
 
@@ -414,6 +414,7 @@
                 if (cert.unit === 'S' || cert.unit === '深圳计量院') {
                     document.getElementById('defaultHeader').classList.add('hidden');
                     document.getElementById('szjlyHeader').classList.remove('hidden');
+                    document.getElementById('szjlyBottomImg').classList.remove('hidden');
                 }
                 return cert;
             } catch (e) {

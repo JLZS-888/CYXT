@@ -437,21 +437,18 @@
                             fieldConfig[f] = cert.fieldConfig[f] !== false;
                         });
                     } else if (data && data.fieldConfig) {
+                        // 全局配置：跳过certId（证书编号只能由证书级配置单独控制）
                         FIELD_ORDER.forEach(function(f) {
-                            fieldConfig[f] = data.fieldConfig[f] !== false;
+                            if (f !== 'certId') fieldConfig[f] = data.fieldConfig[f] !== false;
                         });
                     } else {
                         // 没有远程配置时，用本地记忆
                         loadCertFieldConfigFromStorage(cert.id);
                     }
                 }
-                // 证书编号默认隐藏（除非管理后台或URL cfg明确设为true）
+                // 证书编号默认隐藏（只有管理后台为该证书明确设了 certId: true 才显示）
                 if (!urlCfgApplied) {
-                    var certIdForced = false;
-                    // 只有管理后台明确设了 certId: true 才显示
-                    if (cert && cert.fieldConfig && cert.fieldConfig.certId === true) certIdForced = true;
-                    else if (data && data.fieldConfig && data.fieldConfig.certId === true && !cert.fieldConfig) certIdForced = true;
-                    fieldConfig.certId = certIdForced;
+                    fieldConfig.certId = !!(cert && cert.fieldConfig && cert.fieldConfig.certId === true);
                 }
 
                 if (cert.unit === 'S' || cert.unit === '深圳计量院') {

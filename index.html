@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -98,8 +98,7 @@
             <!-- 错误提示 -->
             <div id="error" class="hidden text-center py-12">
                 <div class="text-4xl mb-4">❌</div>
-                <p class="text-red-500 font-bold">未找到证书信息</p>
-                <p class="text-slate-400 text-sm mt-2" id="errorMsg">请检查二维码是否正确</p>
+                <p class="text-red-500 font-bold" id="errorMsg">未找到证书信息</p>
             </div>
             
             <!-- 证书内容 -->
@@ -304,17 +303,11 @@
             container.innerHTML = html;
         }
         
-        // 显示错误（带调试信息和重试）
+        // 显示错误
         function showError(reason, isNetworkError) {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('error').classList.remove('hidden');
-            var msgEl = document.getElementById('errorMsg');
-            if (isNetworkError) {
-                msgEl.textContent = '网络加载失败，请点击下方按钮重试';
-            } else if (reason) {
-                msgEl.textContent = reason;
-                dbg('showError: ' + reason);
-            }
+            dbg('showError: ' + reason);
         }
 
         // 记录是否有数据源成功返回过数据（区分网络错误和证书不存在）

@@ -135,16 +135,20 @@
         }
         initHeader();
         
-        // 字段配置（可由URL参数控制）
-        let fieldConfig = {
-            certId: true, reportType: true, result: true,
-            orderNumber: true, client: true, instrumentName: true,
-            manufacturer: true, calibrationDate: true, expiryDate: true,
-            factoryNumber: true, model: true
-        };
-        
         // 字段顺序（与 cfgMask 对应）
         const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+
+        // 字段配置（可由URL参数控制，默认全部显示）
+        let fieldConfig = {};
+        FIELD_ORDER.forEach(function(f) { fieldConfig[f] = true; });
+        // 从 localStorage 恢复上次查询页的设置（用户手动改过的记忆）
+        try {
+            var _lastConfig = localStorage.getItem('cyxt_field_config');
+            if (_lastConfig) {
+                var _parsed = JSON.parse(_lastConfig);
+                FIELD_ORDER.forEach(function(f) { if (_parsed[f] !== undefined) fieldConfig[f] = _parsed[f]; });
+            }
+        } catch(e) {}
 
         // ===== 调试日志 =====
         const _dbg = [];
@@ -301,6 +305,8 @@
                 html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
             });
             container.innerHTML = html;
+            // 记住当前字段配置到 localStorage（下次打开页面自动恢复）
+            try { localStorage.setItem('cyxt_field_config', JSON.stringify(fieldConfig)); } catch(e) {}
         }
         
         // 显示错误
@@ -404,8 +410,14 @@
                 var cert = result.cert;
                 var data = result.data;
 
-                // 应用字段配置
-                if (data && data.fieldConfig) {
+                // 应用字段配置：优先用证书自身的配置，没有则用全局默认（全显示）
+                // 每个证书可以有独立的 fieldConfig，互不影响
+                if (cert && cert.fieldConfig) {
+                    FIELD_ORDER.forEach(function(f) {
+                        fieldConfig[f] = cert.fieldConfig[f] !== false;
+                    });
+                } else if (data && data.fieldConfig) {
+                    // 没有证书级配置时，用全局默认配置
                     FIELD_ORDER.forEach(function(f) {
                         fieldConfig[f] = data.fieldConfig[f] !== false;
                     });

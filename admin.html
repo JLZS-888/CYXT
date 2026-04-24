@@ -1026,8 +1026,8 @@
         // 临时存储批量解析结果
         var batchCerts = [];
 
-        // 从前N行扫描关键词，关键词的右侧相邻列为数据列
-        // 返回 { keywordRow: 2, dataStartRow: 3, mapping: { certNo: 3, client: 5, ... } } 或 null
+        // 从前N行扫描关键词行（表头），关键词所在列即为该字段的数据列
+        // 返回 { keywordRow: 0, dataStartRow: 1, mapping: { certNo: 0, client: 1, ... } } 或 null
         function detectColumnMapping(rows) {
             var maxSearch = Math.min(rows.length, 20);
             // 精确匹配关键词列表（优先级高）
@@ -1038,22 +1038,20 @@
 
             for (var h = 0; h < maxSearch; h++) {
                 var row = rows[h];
-                // 先扫描所有单元格，分精确匹配和模糊匹配两轮
-                var exactMapping = {};   // 精确匹配结果
-                var fuzzyMapping = {};   // 模糊匹配结果
+                var exactMapping = {};
+                var fuzzyMapping = {};
 
                 for (var col = 0; col < row.length; col++) {
                     var cellVal = String(row[col] || '').trim();
                     if (!cellVal) continue;
-                    var dataCol = col + 1;
 
-                    // 第一轮：精确匹配
+                    // 第一轮：精确匹配（数据列 = 关键词所在列本身）
                     for (var field in EXACT_KEYWORDS) {
                         if (exactMapping[field] !== undefined) continue;
                         var exactKws = EXACT_KEYWORDS[field];
                         for (var k = 0; k < exactKws.length; k++) {
                             if (cellVal === exactKws[k]) {
-                                exactMapping[field] = dataCol;
+                                exactMapping[field] = col;
                                 break;
                             }
                         }
@@ -1061,12 +1059,12 @@
 
                     // 第二轮：模糊匹配（仅未精确匹配的字段）
                     for (var field in EXCEL_KEYWORDS) {
-                        if (exactMapping[field] !== undefined) continue; // 已精确匹配，跳过
+                        if (exactMapping[field] !== undefined) continue;
                         if (fuzzyMapping[field] !== undefined) continue;
                         var keywords = EXCEL_KEYWORDS[field];
                         for (var k = 0; k < keywords.length; k++) {
                             if (cellVal.indexOf(keywords[k]) >= 0) {
-                                fuzzyMapping[field] = dataCol;
+                                fuzzyMapping[field] = col;
                                 break;
                             }
                         }

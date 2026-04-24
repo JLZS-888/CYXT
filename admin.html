@@ -762,7 +762,17 @@
 
             // ID 永远用短ID，保证二维码稀疏；证书编号存到 certNo 字段
             const id = editingId || genShortId();
-            const certNo = document.getElementById('certNo').value.trim().toUpperCase();
+            // 编辑模式：certNo 字段 disabled，从原始证书对象取值，防止丢失
+            let certNo;
+            if (editingId) {
+                const origCert = certs.find(c => c.id === editingId);
+                // 兼容老证书（certNo 可能未定义，从表单取显示值）
+                certNo = origCert && origCert.certNo !== undefined
+                    ? origCert.certNo
+                    : document.getElementById('certNo').value.trim().toUpperCase();
+            } else {
+                certNo = document.getElementById('certNo').value.trim().toUpperCase();
+            }
             
 
             const certData = {
@@ -792,7 +802,7 @@
 
                 model: document.getElementById('model').value,
 
-                createdAt: new Date().toISOString()
+                createdAt: editingId ? (certs.find(c=>c.id===editingId)||{}).createdAt || new Date().toISOString() : new Date().toISOString()
 
             };
 
@@ -1276,12 +1286,14 @@
         function editCert(id) {
             const cert = certs.find(c => c.id === id);
             if (!cert) return;
-            editingId = id; // 记录正在编辑的证书原始 ID
+            editingId = id; // 记录正在编辑的证书原始 ID，保存时保持不变
             document.getElementById('reportType').value = cert.reportType || '校准';
             document.getElementById('unit').value = cert.unit || '';
             updateDateLabel();
             updateResult();
-            document.getElementById('certNo').value = cert.id.startsWith('TEMP_') ? '' : cert.id;
+            // 优先显示 certNo，没有则显示 id（兼容老证书）
+            const displayCertNo = cert.certNo !== undefined ? cert.certNo : (cert.id.startsWith('TEMP_') ? '' : cert.id);
+            document.getElementById('certNo').value = displayCertNo;
             document.getElementById('certNo').disabled = true;
             document.getElementById('orderNo').value = cert.orderNumber || '';
             document.getElementById('client').value = cert.client || '';

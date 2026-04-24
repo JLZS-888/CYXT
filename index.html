@@ -141,14 +141,23 @@
         // 字段配置（可由URL参数控制，默认全部显示）
         let fieldConfig = {};
         FIELD_ORDER.forEach(function(f) { fieldConfig[f] = true; });
-        // 从 localStorage 恢复上次查询页的设置（用户手动改过的记忆）
-        try {
-            var _lastConfig = localStorage.getItem('cyxt_field_config');
-            if (_lastConfig) {
-                var _parsed = JSON.parse(_lastConfig);
-                FIELD_ORDER.forEach(function(f) { if (_parsed[f] !== undefined) fieldConfig[f] = _parsed[f]; });
-            }
-        } catch(e) {}
+
+        // 按证书ID从 localStorage 恢复该证书上次的字段设置
+        function loadCertFieldConfigFromStorage(certId) {
+            if (!certId) return;
+            try {
+                var _stored = localStorage.getItem('cyxt_fc_' + certId);
+                if (_stored) {
+                    var _parsed = JSON.parse(_stored);
+                    FIELD_ORDER.forEach(function(f) { if (_parsed[f] !== undefined) fieldConfig[f] = _parsed[f]; });
+                }
+            } catch(e) {}
+        }
+        // 保存当前证书的字段配置到 localStorage
+        function saveCertFieldConfigToStorage(certId) {
+            if (!certId) return;
+            try { localStorage.setItem('cyxt_fc_' + certId, JSON.stringify(fieldConfig)); } catch(e) {}
+        }
 
         // ===== 调试日志 =====
         const _dbg = [];
@@ -305,8 +314,9 @@
                 html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
             });
             container.innerHTML = html;
-            // 记住当前字段配置到 localStorage（下次打开页面自动恢复）
-            try { localStorage.setItem('cyxt_field_config', JSON.stringify(fieldConfig)); } catch(e) {}
+            // 按证书ID记住当前字段配置（只影响该证书，不影响其他证书）
+            var _cid = cert.id || cert.certNo || '';
+            saveCertFieldConfigToStorage(_cid);
         }
         
         // 显示错误
@@ -410,7 +420,7 @@
                 var cert = result.cert;
                 var data = result.data;
 
-                // 应用字段配置：优先用证书自身的配置，没有则用全局默认（全显示）
+                // 应用字段配置：优先用证书自身的配置，没有则用按证书ID的本地记忆
                 // 每个证书可以有独立的 fieldConfig，互不影响
                 if (cert && cert.fieldConfig) {
                     FIELD_ORDER.forEach(function(f) {
@@ -421,6 +431,9 @@
                     FIELD_ORDER.forEach(function(f) {
                         fieldConfig[f] = data.fieldConfig[f] !== false;
                     });
+                } else {
+                    // 没有远程配置时，用该证书上次在本地查看时的设置
+                    loadCertFieldConfigFromStorage(cert.id);
                 }
 
                 if (cert.unit === 'S' || cert.unit === '深圳计量院') {

@@ -282,19 +282,24 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('certInfo').classList.remove('hidden');
 
-            // 顶部大编号（受字段配置certId控制，未勾选时隐藏）
+            // 证书编号为空或含汉字时强制隐藏（不管有没有勾选）
             const displayCertNo = cert.certNo || cert.id || '';
+            const certNoHasChinese = /[\u4e00-\u9fff]/.test(displayCertNo);
+            const certNoEmpty = !displayCertNo.trim();
+            const certIdVisible = fieldConfig.certId && !certNoEmpty && !certNoHasChinese;
+
+            // 顶部大编号
             const topCertId = document.getElementById('certId');
             const topCertIdSection = topCertId.closest('.text-center');
             if (topCertIdSection) {
-                topCertIdSection.style.display = fieldConfig.certId ? 'block' : 'none';
+                topCertIdSection.style.display = certIdVisible ? 'block' : 'none';
             }
             topCertId.textContent = displayCertNo;
 
             // 动态构建单列卡片（全部黑色）
             const FIELD_DEFS = [
                 { id: 'client',        label: '证书单位',     show: fieldConfig.client },
-                { id: 'certIdInline',  label: '证书编号',     show: fieldConfig.certId },
+                { id: 'certIdInline',  label: '证书编号',     show: certIdVisible },
                 { id: 'reportType',    label: '报告类型',     show: fieldConfig.reportType },
                 { id: 'instrumentName',label: '仪器名称',     show: fieldConfig.instrumentName },
                 { id: 'manufacturer',  label: '制造厂',       show: fieldConfig.manufacturer },

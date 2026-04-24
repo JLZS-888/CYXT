@@ -138,9 +138,9 @@
         // 字段顺序（与 cfgMask 对应）
         const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
 
-        // 字段配置（可由URL参数控制，默认全部显示）
+        // 字段配置（可由URL参数控制，证书编号默认隐藏）
         let fieldConfig = {};
-        FIELD_ORDER.forEach(function(f) { fieldConfig[f] = true; });
+        FIELD_ORDER.forEach(function(f) { fieldConfig[f] = f !== 'certId'; });
         let urlCfgApplied = false; // 标记URL cfg参数是否已设置fieldConfig
 
         // 按证书ID从 localStorage 恢复该证书上次的字段设置，返回是否成功
@@ -427,11 +427,11 @@
 
                 // 应用字段配置优先级：
                 // 1. URL cfg 参数（最高，兼容旧二维码）——已在 parseUrlParams 中处理
-                // 2. localStorage 记忆（该证书上次在查询页手动设置的）——最高实际优先
-                // 3. 管理后台 cert.fieldConfig 或 data.fieldConfig
-                // 4. 默认全 true
-                if (!urlCfgApplied && !loadCertFieldConfigFromStorage(cert.id)) {
-                    // URL无cfg参数 且 无本地记忆时，才用管理后台推送的配置
+                // 2. 管理后台 cert.fieldConfig 或 data.fieldConfig
+                // 3. localStorage 记忆（该证书上次在查询页手动设置的）
+                // 4. 默认值（certId默认false，其余true）
+                if (!urlCfgApplied) {
+                    // 管理后台配置
                     if (cert && cert.fieldConfig) {
                         FIELD_ORDER.forEach(function(f) {
                             fieldConfig[f] = cert.fieldConfig[f] !== false;
@@ -440,7 +440,18 @@
                         FIELD_ORDER.forEach(function(f) {
                             fieldConfig[f] = data.fieldConfig[f] !== false;
                         });
+                    } else {
+                        // 没有远程配置时，用本地记忆
+                        loadCertFieldConfigFromStorage(cert.id);
                     }
+                }
+                // 证书编号默认隐藏（除非管理后台或URL cfg明确设为true）
+                if (!urlCfgApplied) {
+                    var certIdForced = false;
+                    // 只有管理后台明确设了 certId: true 才显示
+                    if (cert && cert.fieldConfig && cert.fieldConfig.certId === true) certIdForced = true;
+                    else if (data && data.fieldConfig && data.fieldConfig.certId === true && !cert.fieldConfig) certIdForced = true;
+                    fieldConfig.certId = certIdForced;
                 }
 
                 if (cert.unit === 'S' || cert.unit === '深圳计量院') {

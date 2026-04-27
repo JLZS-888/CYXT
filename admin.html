@@ -439,6 +439,19 @@
 
                     </div>
 
+                    <!-- 证书级字段显示设置（仅编辑时显示） -->
+                    <div id="certFieldConfigSection" class="hidden mt-6 pt-5 border-t border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
+                            <span>👁️</span> 当前证书字段显示设置
+                            <span class="text-[10px] text-slate-400 font-normal">（仅影响此证书，不影响其他证书）</span>
+                        </h3>
+                        <div id="certFieldConfig" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+                        <div class="mt-3 flex gap-2">
+                            <button type="button" onclick="resetCertFieldConfig()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition">恢复默认（全显示）</button>
+                            <button type="button" onclick="useGlobalAsCertConfig()" class="px-3 py-1.5 text-xs bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-100 transition">使用全局配置</button>
+                        </div>
+                    </div>
+
                     <div class="flex gap-4 mt-8">
 
                         <button onclick="saveCert()" class="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-bold shadow-md hover:bg-emerald-600 transition active:scale-95">
@@ -716,12 +729,13 @@
             for (let f of fields) {
 
                 const checked = fieldConfig[f] !== false;
-
+                // 委托单号勾选变化时额外联动输入框状态
+                const extra = f === 'orderNumber' ? "; syncOrderNoState()" : "";
                 html += `
 
                     <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
 
-                        <input type="checkbox" id="cfg_${f}" ${checked ? 'checked' : ''} onchange="fieldConfig['${f}'] = this.checked" class="w-4 h-4 accent-blue-500">
+                        <input type="checkbox" id="cfg_${f}" ${checked ? 'checked' : ''} onchange="fieldConfig['${f}'] = this.checked${extra}" class="w-4 h-4 accent-blue-500">
 
                         <span class="text-sm text-slate-600">${labels[f]}</span>
 
@@ -730,7 +744,41 @@
             }
 
             document.getElementById('fieldConfig').innerHTML = html;
+            // 渲染完后同步委托单号输入框状态
+            syncOrderNoState();
 
+        }
+
+        // 证书级字段显示配置（每个证书独立，不影响其他证书）
+        var certFieldConfig = {}; // 当前编辑证书的字段配置
+
+        function renderCertFieldConfig() {
+            var fields = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+            var labels = {
+                certId: '证书编号', reportType: '报告类型', result: '校准/检定结果',
+                orderNumber: '委托单号', client: '委托单位', instrumentName: '仪器名称',
+                manufacturer: '制造厂', calibrationDate: '校准日期', expiryDate: '有效期至',
+                factoryNumber: '出厂编号', model: '规格型号'
+            };
+            var html = '';
+            for (var i = 0; i < fields.length; i++) {
+                var f = fields[i];
+                var checked = certFieldConfig[f] !== false;
+                html += '<label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs">' +
+                    '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="certFieldConfig[\'' + f + '\']=this.checked" class="w-3.5 h-3.5 accent-emerald-500">' +
+                    '<span class="text-slate-600">' + labels[f] + '</span></label>';
+            }
+            document.getElementById('certFieldConfig').innerHTML = html;
+        }
+
+        function resetCertFieldConfig() {
+            certFieldConfig = {};
+            renderCertFieldConfig();
+        }
+
+        function useGlobalAsCertConfig() {
+            certFieldConfig = JSON.parse(JSON.stringify(fieldConfig));
+            renderCertFieldConfig();
         }
 
         
@@ -766,21 +814,32 @@
         
 
         function generateOrderNo() {
-
+            // 未勾选委托单号时不自动生成
+            if (!fieldConfig.orderNumber) return;
             const date = document.getElementById('date').value;
-
             if (date) {
-
                 const d = new Date(date);
-
                 const y = d.getFullYear().toString().slice(-2);
-
                 const m = (d.getMonth() + 1).toString().padStart(2, '0');
-
                 document.getElementById('orderNo').value = `${y}${m}WD-`;
-
             }
+        }
 
+        // 根据勾选状态同步委托单号输入框的启用/禁用
+        function syncOrderNoState() {
+            const input = document.getElementById('orderNo');
+            if (fieldConfig.orderNumber) {
+                input.disabled = false;
+                input.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-400');
+                input.classList.add('bg-slate-50/50');
+                input.placeholder = '自动生成';
+            } else {
+                input.value = '';
+                input.disabled = true;
+                input.classList.remove('bg-slate-50/50');
+                input.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-400');
+                input.placeholder = '（未勾选，不显示）';
+            }
         }
 
         
@@ -889,7 +948,10 @@
 
                 model: document.getElementById('model').value,
 
-                createdAt: editingId ? (certs.find(c=>c.id===editingId)||{}).createdAt || new Date().toISOString() : new Date().toISOString()
+                createdAt: editingId ? (certs.find(c=>c.id===editingId)||{}).createdAt || new Date().toISOString() : new Date().toISOString(),
+
+                // 证书级字段配置（仅在有非默认配置时存储）
+                fieldConfig: Object.keys(certFieldConfig).length > 0 ? JSON.parse(JSON.stringify(certFieldConfig)) : undefined
 
             };
 
@@ -964,6 +1026,9 @@
 
             document.getElementById('formTitle').innerText = '📝 录入证书详情';
             editingId = null; // 退出编辑模式
+            certFieldConfig = {};
+            document.getElementById('certFieldConfigSection').classList.add('hidden');
+            syncOrderNoState();
 
         }
 
@@ -1683,7 +1748,7 @@
 
                 // 第二步：构建推送数据
                 var exportCerts = certs.map(function(c) {
-                    return {
+                    var obj = {
                         id: c.id,
                         certNo: c.certNo || '',
                         reportType: c.reportType || '',
@@ -1696,8 +1761,14 @@
                         expiryDate: c.expiryDate || '',
                         factoryNumber: c.factoryNumber || '',
                         model: c.model || '',
-                        unit: c.unit || ''
+                        unit: c.unit || '',
+                        createdAt: c.createdAt || ''
                     };
+                    // 证书级字段配置（仅非空时导出）
+                    if (c.fieldConfig && Object.keys(c.fieldConfig).length > 0) {
+                        obj.fieldConfig = c.fieldConfig;
+                    }
+                    return obj;
                 });
                 // 附带字段配置
                 var payload = {
@@ -1778,6 +1849,10 @@
             document.getElementById('fact').value = cert.factoryNumber || '';
             document.getElementById('model').value = cert.model || '';
             document.getElementById('formTitle').innerText = '✏️ 修改证书详情';
+            // 加载证书级字段配置
+            certFieldConfig = cert.fieldConfig ? JSON.parse(JSON.stringify(cert.fieldConfig)) : {};
+            renderCertFieldConfig();
+            document.getElementById('certFieldConfigSection').classList.remove('hidden');
             const certUrl = QUERY_BASE_URL + '#' + id;
             let linkDiv = document.getElementById('certUrlDisplay');
             if (!linkDiv) {

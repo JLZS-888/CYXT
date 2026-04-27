@@ -283,6 +283,12 @@
             topCertId.textContent = displayCertNo;
 
             // 动态构建单列卡片（全部黑色）
+            // 辅助：取各字段的实际值（用于"无值自动隐藏"判断）
+            function getFieldValue(id) {
+                if (id === 'certIdInline') return cert.certNo || cert.id || '';
+                return cert[id] || '';
+            }
+
             const FIELD_DEFS = [
                 { id: 'client',        label: '证书单位',     show: fieldConfig.client },
                 { id: 'certIdInline',  label: '证书编号',     show: certIdVisible },
@@ -302,10 +308,9 @@
             let html = '';
             FIELD_DEFS.forEach(f => {
                 if (!f.show) return;
-                // certIdInline 映射到 certNo 字段
-                var raw = cert[f.id];
-                if (f.id === 'certIdInline') raw = cert.certNo || cert.id;
-                if (!raw) return;
+                var raw = getFieldValue(f.id);
+                // 无值字段自动隐藏（不管有没有勾选）
+                if (!raw || !raw.toString().trim()) return;
                 const label = f.labelFn ? f.labelFn() : f.label;
                 html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
             });

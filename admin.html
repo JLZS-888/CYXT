@@ -16,6 +16,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+    if (typeof QRCode === 'undefined') {
+        document.write('<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>');
+    }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 </head>
@@ -1563,6 +1568,7 @@
         function showQR(id) {
             const cert = certs.find(c => c.id === id);
             if (!cert) return alert('证书不存在');
+            if (typeof QRCode === 'undefined') return alert('二维码库加载失败，请刷新页面重试');
             const modal = document.getElementById('qrModal');
             const canvas = document.getElementById('qrCanvas');
             // 二维码用 hash 格式（更短更稀疏）：#ID 或 #ID&S

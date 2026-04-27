@@ -138,29 +138,15 @@
         // 字段顺序（与 cfgMask 对应）
         const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
 
-        // 字段配置（可由URL参数控制，证书编号默认隐藏）
+        // 字段配置（默认：除certId外全部显示；certId需明确开启才显示）
         let fieldConfig = {};
-        FIELD_ORDER.forEach(function(f) { fieldConfig[f] = f !== 'certId'; });
         let urlCfgApplied = false; // 标记URL cfg参数是否已设置fieldConfig
 
-        // 按证书ID从 localStorage 恢复该证书上次的字段设置，返回是否成功
-        function loadCertFieldConfigFromStorage(certId) {
-            if (!certId) return false;
-            try {
-                var _stored = localStorage.getItem('cyxt_fc_' + certId);
-                if (_stored) {
-                    var _parsed = JSON.parse(_stored);
-                    FIELD_ORDER.forEach(function(f) { if (_parsed[f] !== undefined) fieldConfig[f] = _parsed[f]; });
-                    return true;
-                }
-            } catch(e) {}
-            return false;
+        // 重置为默认值（每次加载新证书前调用，保证各证书互不影响）
+        function resetFieldConfig() {
+            FIELD_ORDER.forEach(function(f) { fieldConfig[f] = f !== 'certId'; });
         }
-        // 保存当前证书的字段配置到 localStorage
-        function saveCertFieldConfigToStorage(certId) {
-            if (!certId) return;
-            try { localStorage.setItem('cyxt_fc_' + certId, JSON.stringify(fieldConfig)); } catch(e) {}
-        }
+        resetFieldConfig();
 
         // ===== 调试日志 =====
         const _dbg = [];
@@ -324,9 +310,6 @@
                 html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
             });
             container.innerHTML = html;
-            // 按证书ID记住当前字段配置（只影响该证书，不影响其他证书）
-            var _cid = cert.id || cert.certNo || '';
-            saveCertFieldConfigToStorage(_cid);
         }
         
         // 显示错误
@@ -430,30 +413,22 @@
                 var cert = result.cert;
                 var data = result.data;
 
-                // 应用字段配置优先级：
-                // 1. URL cfg 参数（最高，兼容旧二维码）——已在 parseUrlParams 中处理
-                // 2. 管理后台 cert.fieldConfig 或 data.fieldConfig
-                // 3. localStorage 记忆（该证书上次在查询页手动设置的）
-                // 4. 默认值（certId默认false，其余true）
+                // 每次加载新证书先重置字段配置，保证各证书完全独立互不影响
                 if (!urlCfgApplied) {
-                    // 管理后台配置
+                    resetFieldConfig();
+                    // 优先级：证书级配置 > 全局配置（certId 只能由证书级配置控制）
                     if (cert && cert.fieldConfig) {
                         FIELD_ORDER.forEach(function(f) {
-                            fieldConfig[f] = cert.fieldConfig[f] !== false;
+                            fieldConfig[f] = cert.fieldConfig[f] === true;
                         });
                     } else if (data && data.fieldConfig) {
-                        // 全局配置：跳过certId（证书编号只能由证书级配置单独控制）
+                        // 全局配置不控制 certId，其余字段跟随全局
                         FIELD_ORDER.forEach(function(f) {
                             if (f !== 'certId') fieldConfig[f] = data.fieldConfig[f] !== false;
                         });
-                    } else {
-                        // 没有远程配置时，用本地记忆
-                        loadCertFieldConfigFromStorage(cert.id);
+                        // certId 保持默认 false（不显示）
                     }
-                }
-                // 证书编号默认隐藏（只有管理后台为该证书明确设了 certId: true 才显示）
-                if (!urlCfgApplied) {
-                    fieldConfig.certId = !!(cert && cert.fieldConfig && cert.fieldConfig.certId === true);
+                    // 没有任何远程配置：使用 resetFieldConfig 的默认值（certId=false，其余true）
                 }
 
                 if (cert.unit === 'S' || cert.unit === '深圳计量院') {

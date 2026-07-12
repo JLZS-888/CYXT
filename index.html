@@ -327,10 +327,10 @@
         // 记录是否有数据源成功返回过数据（区分网络错误和证书不存在）
         var _anySourceOk = false;
 
-        // 数据源列表（GitHub Pages 优先，JSDelivr 有 CDN 缓存延迟作为备用）
+        // 数据源列表（jsDelivr 优先，国内可访问；GitHub Pages/Raw 作为备用）
         const GH_DATA_URLS = [
-            'https://jlzs-888.github.io/CYXT/data/certs.json',
             'https://cdn.jsdelivr.net/gh/JLZS-888/CYXT@main/data/certs.json',
+            'https://jlzs-888.github.io/CYXT/data/certs.json',
             'https://raw.githubusercontent.com/JLZS-888/CYXT/main/data/certs.json'
         ];
 

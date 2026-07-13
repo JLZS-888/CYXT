@@ -508,7 +508,7 @@
 
             <h3 class="font-bold text-lg mb-4 text-white bg-blue-600 px-4 py-2 rounded-xl">计量证书查询</h3>
 
-            <div id="qrCanvas" class="flex justify-center items-center" style="width:320px;height:320px;margin:0 auto;padding:12px;background:#fff;box-sizing:border-box;"></div>
+            <div id="qrCanvas" class="flex justify-center items-center" style="width:320px;height:320px;margin:0 auto;"></div>
 
             <div id="qrInfo" class="mt-4 text-left text-sm space-y-1 bg-blue-50 p-4 rounded-xl" style="font-family:SimSun,宋体,serif"></div>
 
@@ -1577,11 +1577,11 @@
                 canvas.innerHTML = '';
                 new QRCode(canvas, {
                     text: certUrl,
-                    width: 296,
-                    height: 296,
+                    width: 320,
+                    height: 320,
                     colorDark: '#000000',
                     colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.H
+                    correctLevel: QRCode.CorrectLevel.M
                 });
                 const isJianDing = cert.reportType === '检定';
                 const resultLabel = isJianDing ? '检定结论' : '校准结论';

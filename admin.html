@@ -638,6 +638,27 @@
         // GitHub Raw 地址（用于 index.html 查询端拉取数据）
         const DATA_RAW_URL = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/data/certs.json';
 
+        // GitHub API 请求（国内网络不通时自动走代理）
+        var GH_API_PROXIES = [
+            'https://api.github.com',
+            'https://gh-proxy.com/https://api.github.com'
+        ];
+        async function ghApiFetch(url, options) {
+            for (var i = 0; i < GH_API_PROXIES.length; i++) {
+                var proxyUrl = url.replace('https://api.github.com', GH_API_PROXIES[i]);
+                try {
+                    var res = await fetch(proxyUrl, options);
+                    return res;
+                } catch(e) {
+                    if (e instanceof TypeError && i < GH_API_PROXIES.length - 1) {
+                        console.warn('直连失败，切换代理: ' + GH_API_PROXIES[i+1]);
+                        continue;
+                    }
+                    throw e;
+                }
+            }
+        }
+
 
         // 生成短ID（避免二维码过于密集）
         function genShortId() {
@@ -1642,7 +1663,7 @@
             if (!pat) return;
             if (detailEl) { detailEl.classList.remove('hidden'); detailEl.textContent = '正在从云端拉取数据...'; }
             try {
-                var res = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/data/certs.json', {
+                var res = await ghApiFetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/data/certs.json', {
                     headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 if (!res.ok) {
@@ -1714,7 +1735,7 @@
                 var remoteSha = null;
                 // 第一步：先拉取远程数据，合并到本地（防止覆盖其他设备的数据）
                 try {
-                    var checkRes = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/data/certs.json', {
+                    var checkRes = await ghApiFetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/data/certs.json', {
                         headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json' }
                     });
                     if (checkRes.ok) {
@@ -1788,7 +1809,7 @@
                 if (remoteSha) {
                     body.sha = remoteSha;
                 }
-                var putRes = await fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
+                var putRes = await ghApiFetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
                     method: 'PUT',
                     headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)

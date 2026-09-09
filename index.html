@@ -316,12 +316,11 @@
             // 朗博专用：字段标签 + 只显示的字段白名单 + 卡片底色
             var langboLabelMap = {
                 client: '单位名称',
-                orderNumber: '委托地址',
                 calibrationDate: '校检日期',
                 expiryDate: '有效期',
                 result: '检验结果'
             };
-            var langboOnlyFields = ['client', 'orderNumber', 'calibrationDate', 'expiryDate', 'result'];
+            var langboOnlyFields = ['client', 'calibrationDate', 'expiryDate', 'result'];
 
             const FIELD_DEFS = [
                 { id: 'client',        label: '证书单位',     show: fieldConfig.client },

@@ -331,6 +331,8 @@
 
                                 <option value="S">深圳计量院</option>
 
+                                <option value="L">朗博</option>
+
                             </select>
 
                         </div>
@@ -1592,6 +1594,7 @@
             // 二维码用 hash 格式（更短更稀疏）：#ID 或 #ID&S
             let certUrl = QUERY_BASE_URL + '#' + cert.id;
             if (cert.unit === '深圳计量院' || cert.unit === 'S') certUrl += '&S';
+            if (cert.unit === '朗博' || cert.unit === 'L') certUrl += '&L';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(function() {

@@ -84,6 +84,10 @@
             <div id="szjlyHeader" class="hidden">
                 <img src="images/sz-jly-title.png" alt="深圳计量院" class="w-full">
             </div>
+            <!-- 朗博图片标题 -->
+            <div id="lbHeader" class="hidden">
+                <img src="images/lb-title.png" alt="朗博" class="w-full">
+            </div>
         </div>
         
         <!-- 主内容 -->
@@ -131,6 +135,12 @@
                 document.getElementById('defaultHeader').classList.add('hidden');
                 document.getElementById('szjlyHeader').classList.remove('hidden');
                 document.getElementById('szjlyBottomImg').classList.remove('hidden');
+            } else if (unit === 'L') {
+                document.getElementById('defaultHeader').classList.add('hidden');
+                document.getElementById('lbHeader').classList.remove('hidden');
+                var ca = document.getElementById('contentArea');
+                ca.classList.remove('bg-blue-50');
+                ca.classList.add('bg-white');
             }
         }
         initHeader();
@@ -268,17 +278,31 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('certInfo').classList.remove('hidden');
 
+            // 单位差异化：头部 + 背景（朗博为白底）
+            var isLangbo = (cert.unit === 'L' || cert.unit === '朗博');
+            if (cert.unit === 'S' || cert.unit === '深圳计量院') {
+                document.getElementById('defaultHeader').classList.add('hidden');
+                document.getElementById('szjlyHeader').classList.remove('hidden');
+                document.getElementById('szjlyBottomImg').classList.remove('hidden');
+            } else if (isLangbo) {
+                document.getElementById('defaultHeader').classList.add('hidden');
+                document.getElementById('lbHeader').classList.remove('hidden');
+                var rcCA = document.getElementById('contentArea');
+                rcCA.classList.remove('bg-blue-50');
+                rcCA.classList.add('bg-white');
+            }
+
             // 证书编号为空或含汉字时强制隐藏（不管有没有勾选）
             const displayCertNo = cert.certNo || cert.id || '';
             const certNoHasChinese = /[\u4e00-\u9fff]/.test(displayCertNo);
             const certNoEmpty = !displayCertNo.trim();
             const certIdVisible = fieldConfig.certId && !certNoEmpty && !certNoHasChinese;
 
-            // 顶部大编号
+            // 顶部大编号（朗博不显示顶部大编号）
             const topCertId = document.getElementById('certId');
             const topCertIdSection = topCertId.closest('.text-center');
             if (topCertIdSection) {
-                topCertIdSection.style.display = certIdVisible ? 'block' : 'none';
+                topCertIdSection.style.display = (certIdVisible && !isLangbo) ? 'block' : 'none';
             }
             topCertId.textContent = displayCertNo;
 
@@ -288,6 +312,16 @@
                 if (id === 'certIdInline') return cert.certNo || cert.id || '';
                 return cert[id] || '';
             }
+
+            // 朗博专用：字段标签 + 只显示的字段白名单 + 卡片底色
+            var langboLabelMap = {
+                client: '单位名称',
+                orderNumber: '委托地址',
+                calibrationDate: '校检日期',
+                expiryDate: '有效期',
+                result: '检验结果'
+            };
+            var langboOnlyFields = ['client', 'orderNumber', 'calibrationDate', 'expiryDate', 'result'];
 
             const FIELD_DEFS = [
                 { id: 'client',        label: '证书单位',     show: fieldConfig.client },
@@ -307,12 +341,23 @@
             const container = document.getElementById('infoCards');
             let html = '';
             FIELD_DEFS.forEach(f => {
-                if (!f.show) return;
+                if (isLangbo) {
+                    // 朗博：只显示白名单字段
+                    if (langboOnlyFields.indexOf(f.id) === -1) return;
+                } else {
+                    if (!f.show) return;
+                }
                 var raw = getFieldValue(f.id);
                 // 无值字段自动隐藏（不管有没有勾选）
                 if (!raw || !raw.toString().trim()) return;
-                const label = f.labelFn ? f.labelFn() : f.label;
-                html += '<div class="p-4 rounded-xl"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
+                var label;
+                if (isLangbo) {
+                    label = langboLabelMap[f.id] || f.label;
+                } else {
+                    label = f.labelFn ? f.labelFn() : f.label;
+                }
+                var cardBg = isLangbo ? ' bg-slate-50' : '';
+                html += '<div class="p-4 rounded-xl' + cardBg + '"><div class="text-sm font-bold text-slate-800">' + label + '</div><div class="text-sm text-slate-800 font-normal">' + raw + '</div></div>';
             });
             container.innerHTML = html;
         }
@@ -440,6 +485,12 @@
                     document.getElementById('defaultHeader').classList.add('hidden');
                     document.getElementById('szjlyHeader').classList.remove('hidden');
                     document.getElementById('szjlyBottomImg').classList.remove('hidden');
+                } else if (cert.unit === 'L' || cert.unit === '朗博') {
+                    document.getElementById('defaultHeader').classList.add('hidden');
+                    document.getElementById('lbHeader').classList.remove('hidden');
+                    var lbCA = document.getElementById('contentArea');
+                    lbCA.classList.remove('bg-blue-50');
+                    lbCA.classList.add('bg-white');
                 }
                 return cert;
             } catch (e) {
@@ -462,6 +513,10 @@
                 // 如果 hash 里带 &S 标记深圳计量院
                 if (parts.length > 1 && (parts[1] === 'S' || parts[1] === 's')) {
                     window.__hashUnit = 'S';
+                }
+                // 如果 hash 里带 &L 标记朗博
+                if (parts.length > 1 && (parts[1] === 'L' || parts[1] === 'l')) {
+                    window.__hashUnit = 'L';
                 }
             }
 
@@ -488,6 +543,9 @@
                     // hash 模式下，根据 hashUnit 补充 unit 信息
                     if (window.__hashUnit === 'S' && !cert.unit) {
                         cert.unit = 'S';
+                    }
+                    if (window.__hashUnit === 'L' && !cert.unit) {
+                        cert.unit = 'L';
                     }
                     renderCert(cert);
                 } else {

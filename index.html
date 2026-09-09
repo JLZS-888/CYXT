@@ -76,8 +76,8 @@
     <div class="max-w-lg mx-auto">
         <!-- 头部 -->
         <div id="headerArea" class="rounded-t-3xl shadow-xl text-center overflow-hidden bg-white">
-            <!-- 默认蓝色标题 -->
-            <div id="defaultHeader" class="bg-[#1e88e5] text-white p-6">
+            <!-- 默认蓝色标题（初始隐藏：加载中不显示，渲染默认单位证书时才显示） -->
+            <div id="defaultHeader" class="bg-[#1e88e5] text-white p-6 hidden">
                 <h1 class="text-2xl font-black tracking-widest">计量证书查询</h1>
             </div>
             <!-- 深圳计量院图片标题 -->
@@ -291,6 +291,12 @@
                 var rcCA = document.getElementById('contentArea');
                 rcCA.classList.remove('bg-blue-50');
                 rcCA.classList.add('bg-white');
+            } else {
+                // 默认单位：加载完成后显示蓝色抬头
+                document.getElementById('defaultHeader').classList.remove('hidden');
+                document.getElementById('szjlyHeader').classList.add('hidden');
+                document.getElementById('lbHeader').classList.add('hidden');
+                document.getElementById('szjlyBottomImg').classList.add('hidden');
             }
 
             // 证书编号为空或含汉字时强制隐藏（不管有没有勾选）

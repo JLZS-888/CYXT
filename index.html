@@ -96,13 +96,14 @@
             <div id="loading" class="text-center py-12">
                 <div style="display:inline-block;width:32px;height:32px;border:3px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px;"></div>
                 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-                <p class="text-slate-400">加载中...</p>
+                <p class="text-slate-500">查询中，请稍等...</p>
             </div>
-            
+
             <!-- 错误提示 -->
             <div id="error" class="hidden text-center py-12">
                 <div class="text-4xl mb-4">❌</div>
                 <p class="text-red-500 font-bold" id="errorMsg">未找到证书信息</p>
+                <button id="retryBtn" onclick="location.reload()" style="margin-top:16px;padding:10px 32px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">重试</button>
             </div>
             
             <!-- 证书内容 -->
@@ -365,6 +366,8 @@
         function showError(reason, isNetworkError) {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('error').classList.remove('hidden');
+            // 网络失败：明确引导重试；未找到：说明证书不存在
+            document.getElementById('errorMsg').textContent = isNetworkError ? '查询失败，请点击重试' : '未找到证书信息';
             dbg('showError: ' + reason);
         }
 

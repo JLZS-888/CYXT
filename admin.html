@@ -11,6 +11,22 @@
 
     <title>计量证书管理</title>
 
+    <style>
+        /* 防拷贝：禁用页面文本选择；输入框/文本域保留可选择以便粘贴 Token 等 */
+        html, body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        input, textarea, select, [contenteditable="true"] {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js" defer></script>
@@ -2133,6 +2149,40 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('tokenStatus').className = 'text-xs mt-1 text-green-600';
     }
 });
+</script>
+
+<!-- 防拷贝保护（不影响输入框操作） -->
+<script>
+(function() {
+    // 拦截右键：输入框内允许使用浏览器右键菜单（粘贴 Token 等）
+    document.addEventListener('contextmenu', function(e) {
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        e.preventDefault();
+        return false;
+    });
+
+    // 拦截开发者工具与查看源代码相关快捷键
+    document.addEventListener('keydown', function(e) {
+        // F12：开发者工具
+        if (e.key === 'F12') { e.preventDefault(); return false; }
+        // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C：开发者工具
+        if (e.ctrlKey && e.shiftKey && /^[IJC]$/i.test(e.key)) { e.preventDefault(); return false; }
+        // Ctrl+U：查看源代码
+        if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toUpperCase() === 'U') { e.preventDefault(); return false; }
+        // Ctrl+S：另存为网页
+        if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toUpperCase() === 'S') { e.preventDefault(); return false; }
+        return true;
+    });
+
+    // 拦截非输入区的文本拖拽
+    document.addEventListener('dragstart', function(e) {
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        e.preventDefault();
+        return false;
+    });
+})();
 </script>
 
 </body>

@@ -327,11 +327,13 @@
 
                             <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">报告类型</label>
 
-                            <select id="reportType" class="p-3 border rounded-xl w-full outline-none focus:border-emerald-500 bg-slate-50/50" onchange="updateDateLabel(); updateResult();">
+                            <select id="reportType" class="p-3 border rounded-xl w-full outline-none focus:border-emerald-500 bg-slate-50/50" onchange="updateDateLabel(); updateResult(); updateOperatorLabel();">
 
                                 <option value="校准">校准 (默认)</option>
 
                                 <option value="检定">检定</option>
+
+                                <option value="检测">检测</option>
 
                             </select>
 
@@ -454,6 +456,36 @@
                             <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">规格型号</label>
 
                             <input type="text" id="model" placeholder="选填" class="w-full p-3 border rounded-xl outline-none focus:border-emerald-500 bg-slate-50/50">
+
+                        </div>
+
+                        <div>
+
+                            <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">批准人</label>
+
+                            <input type="text" id="approver" list="approverList" placeholder="输入或选择姓名" class="w-full p-3 border rounded-xl outline-none focus:border-emerald-500 bg-slate-50/50">
+
+                            <datalist id="approverList"></datalist>
+
+                        </div>
+
+                        <div>
+
+                            <label class="text-xs font-bold text-slate-500 mb-1 block ml-1">核验员</label>
+
+                            <input type="text" id="verifier" list="verifierList" placeholder="输入或选择姓名" class="w-full p-3 border rounded-xl outline-none focus:border-emerald-500 bg-slate-50/50">
+
+                            <datalist id="verifierList"></datalist>
+
+                        </div>
+
+                        <div>
+
+                            <label id="operatorLabel" class="text-xs font-bold text-slate-500 mb-1 block ml-1">校准员</label>
+
+                            <input type="text" id="operator" list="operatorList" placeholder="输入或选择姓名" class="w-full p-3 border rounded-xl outline-none focus:border-emerald-500 bg-slate-50/50">
+
+                            <datalist id="operatorList"></datalist>
 
                         </div>
 
@@ -647,7 +679,7 @@
 
         // 字段顺序（用于 cfgMask 编码）
 
-        const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+        const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model', 'approver', 'verifier', 'operator'];
 
         
 
@@ -751,17 +783,19 @@
 
         function renderFieldConfig() {
 
-            const fields = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+            const fields = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model', 'approver', 'verifier', 'operator'];
 
-            const labels = { 
+            const labels = {
 
                 certId: '证书编号', reportType: '报告类型', result: '检定/校准结果',
 
-                orderNumber: '委托单号', client: '证书单位', instrumentName: '仪器名称', 
+                orderNumber: '委托单号', client: '证书单位', instrumentName: '仪器名称',
 
-                manufacturer: '制造厂', calibrationDate: '校准日期', expiryDate: '有效期至', 
+                manufacturer: '制造厂', calibrationDate: '校准日期', expiryDate: '有效期至',
 
-                factoryNumber: '出厂编号', model: '规格型号' 
+                factoryNumber: '出厂编号', model: '规格型号',
+
+                approver: '批准人', verifier: '核验员', operator: '操作员（校准员/检定员/检测员）'
 
             };
 
@@ -794,12 +828,13 @@
         var certFieldConfig = {}; // 当前编辑证书的字段配置
 
         function renderCertFieldConfig() {
-            var fields = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+            var fields = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model', 'approver', 'verifier', 'operator'];
             var labels = {
                 certId: '证书编号', reportType: '报告类型', result: '校准/检定结果',
                 orderNumber: '委托单号', client: '委托单位', instrumentName: '仪器名称',
                 manufacturer: '制造厂', calibrationDate: '校准日期', expiryDate: '有效期至',
-                factoryNumber: '出厂编号', model: '规格型号'
+                factoryNumber: '出厂编号', model: '规格型号',
+                approver: '批准人', verifier: '核验员', operator: '操作员（校准员/检定员/检测员）'
             };
             var html = '';
             for (var i = 0; i < fields.length; i++) {
@@ -840,15 +875,27 @@
 
             const manus = [...new Set(certs.map(c => c.manufacturer).filter(Boolean))];
 
-            
+            const approvers = [...new Set(certs.map(c => c.approver).filter(Boolean))];
 
-            ['clientList', 'instList', 'manuList'].forEach(id => document.getElementById(id).innerHTML = '');
+            const verifiers = [...new Set(certs.map(c => c.verifier).filter(Boolean))];
+
+            const operators = [...new Set(certs.map(c => c.operator).filter(Boolean))];
+
+
+
+            ['clientList', 'instList', 'manuList', 'approverList', 'verifierList', 'operatorList'].forEach(id => document.getElementById(id).innerHTML = '');
 
             clients.forEach(v => { const opt = document.createElement('option'); opt.value = v; document.getElementById('clientList').appendChild(opt); });
 
             insts.forEach(v => { const opt = document.createElement('option'); opt.value = v; document.getElementById('instList').appendChild(opt); });
 
             manus.forEach(v => { const opt = document.createElement('option'); opt.value = v; document.getElementById('manuList').appendChild(opt); });
+
+            approvers.forEach(v => { const opt = document.createElement('option'); opt.value = v; document.getElementById('approverList').appendChild(opt); });
+
+            verifiers.forEach(v => { const opt = document.createElement('option'); opt.value = v; document.getElementById('verifierList').appendChild(opt); });
+
+            operators.forEach(v => { const opt = document.createElement('option'); opt.value = v; document.getElementById('operatorList').appendChild(opt); });
 
         }
 
@@ -911,7 +958,11 @@
 
             const type = document.getElementById('reportType').value;
 
-            document.getElementById('dateLabel').textContent = type === '检定' ? '检定日期' : '校准日期';
+            if (type === '检定') document.getElementById('dateLabel').textContent = '检定日期';
+
+            else if (type === '检测') document.getElementById('dateLabel').textContent = '检测日期';
+
+            else document.getElementById('dateLabel').textContent = '校准日期';
 
         }
 
@@ -941,6 +992,16 @@
 
             }
 
+        }
+
+
+        // 根据报告类型切换"操作员"标签（校准员/检定员/检测员）
+        function updateOperatorLabel() {
+            const type = document.getElementById('reportType').value;
+            const label = document.getElementById('operatorLabel');
+            if (type === '检定') label.textContent = '检定员';
+            else if (type === '检测') label.textContent = '检测员';
+            else label.textContent = '校准员';
         }
 
         
@@ -988,6 +1049,12 @@
                 factoryNumber: document.getElementById('fact').value,
 
                 model: document.getElementById('model').value,
+
+                approver: document.getElementById('approver').value,
+
+                verifier: document.getElementById('verifier').value,
+
+                operator: document.getElementById('operator').value,
 
                 createdAt: editingId ? (certs.find(c=>c.id===editingId)||{}).createdAt || new Date().toISOString() : new Date().toISOString(),
 
@@ -1055,6 +1122,12 @@
 
             document.getElementById('model').value = '';
 
+            document.getElementById('approver').value = '';
+
+            document.getElementById('verifier').value = '';
+
+            document.getElementById('operator').value = '';
+
             document.getElementById('reportType').value = '校准';
 
             document.getElementById('unit').value = '';
@@ -1064,6 +1137,8 @@
             updateDateLabel();
 
             updateResult();
+
+            updateOperatorLabel();
 
             document.getElementById('formTitle').innerText = '📝 录入证书详情';
             editingId = null; // 退出编辑模式
@@ -1317,6 +1392,9 @@
                 orderNumber: getValue('orderNumber'),
                 reportType: '校准',
                 result: '符合要求',
+                approver: '',
+                verifier: '',
+                operator: '',
                 unit: '',
                 createdAt: new Date().toISOString()
             };
@@ -1627,12 +1705,16 @@
                     correctLevel: QRCode.CorrectLevel.M
                 });
                 const isJianDing = cert.reportType === '检定';
-                const resultLabel = isJianDing ? '检定结论' : '校准结论';
+                const resultLabel = isJianDing ? '检定结论' : (cert.reportType === '检测' ? '检测结论' : '校准结论');
                 const resultText = isJianDing ? '合格' : '符合要求';
+                const operatorLabel = cert.reportType === '检定' ? '检定员' : (cert.reportType === '检测' ? '检测员' : '校准员');
                 const infoHtml = '<div class="font-bold text-slate-700 border-b pb-2 mb-2">证书信息</div>' +
                     (cert.client ? '<div><span class="text-slate-500">证书单位:</span> <span class="text-xs font-normal">' + cert.client + '</span></div>' : '') +
                     (cert.id && !cert.id.startsWith('TEMP_') ? '<div><span class="text-slate-500">证书号:</span> <span class="text-xs font-normal">' + cert.id + '</span></div>' : '') +
                     (cert.instrumentName ? '<div><span class="text-slate-500">仪器名称:</span> <span class="text-xs font-normal">' + cert.instrumentName + '</span></div>' : '') +
+                    (cert.approver ? '<div><span class="text-slate-500">批准人:</span> <span class="text-xs font-normal">' + cert.approver + '</span></div>' : '') +
+                    (cert.verifier ? '<div><span class="text-slate-500">核验员:</span> <span class="text-xs font-normal">' + cert.verifier + '</span></div>' : '') +
+                    (cert.operator ? '<div><span class="text-slate-500">' + operatorLabel + ':</span> <span class="text-xs font-normal">' + cert.operator + '</span></div>' : '') +
                     '<div class="pt-2 mt-2 border-t border-slate-200">' +
                         '<span class="text-slate-500">' + resultLabel + ':</span> ' +
                         '<span class="font-bold ' + (isJianDing ? 'text-blue-600' : 'text-emerald-600') + '">' + resultText + '</span>' +
@@ -1646,8 +1728,9 @@
 
         function buildCertPage(cert, visibleFields) {
             var isJD = cert.reportType === '检定';
-            var resultLabel = isJD ? '检定结论' : '校准结果';
-            var dateLabel = isJD ? '检定日期' : '校准日期';
+            var isTC = cert.reportType === '检测';
+            var resultLabel = isJD ? '检定结论' : (isTC ? '检测结论' : '校准结果');
+            var dateLabel = isJD ? '检定日期' : (isTC ? '检测日期' : '校准日期');
             var isSzJly = cert.unit === '深圳计量院';
     var szImg = isSzJly ? '<div id="szjlyHeader"><img src="../images/sz-jly-title.jpg" alt="深圳计量院" style="width:100%;display:block"></div>' : '';
             var fields = '';
@@ -1662,6 +1745,10 @@
             if (cert.calibrationDate && visibleFields.calibrationDate !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + dateLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.calibrationDate + '</div></div>';
             if (cert.expiryDate && visibleFields.expiryDate !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">有效期至</div><div style="font-weight:bold;color:#334155">' + cert.expiryDate + '</div></div>';
             if (cert.result && visibleFields.result !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + resultLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.result + '</div></div>';
+            var opLabel = cert.reportType === '检定' ? '检定员' : (cert.reportType === '检测' ? '检测员' : '校准员');
+            if (cert.approver && visibleFields.approver !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">批准人</div><div style="font-weight:bold;color:#334155">' + cert.approver + '</div></div>';
+            if (cert.verifier && visibleFields.verifier !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">核验员</div><div style="font-weight:bold;color:#334155">' + cert.verifier + '</div></div>';
+            if (cert.operator && visibleFields.operator !== false) fields += '<div style="background:#fff;padding:16px;border-radius:12px"><div style="font-size:12px;color:#94a3b8">' + opLabel + '</div><div style="font-weight:bold;color:#334155">' + cert.operator + '</div></div>';
             var validHtml = '';
             if (cert.expiryDate) {
                 var today = new Date(); today.setHours(0,0,0,0);
@@ -1807,6 +1894,9 @@
                         expiryDate: c.expiryDate || '',
                         factoryNumber: c.factoryNumber || '',
                         model: c.model || '',
+                        approver: c.approver || '',
+                        verifier: c.verifier || '',
+                        operator: c.operator || '',
                         unit: c.unit || '',
                         createdAt: c.createdAt || ''
                     };
@@ -1882,6 +1972,7 @@
             document.getElementById('unit').value = cert.unit || '';
             updateDateLabel();
             updateResult();
+            updateOperatorLabel();
             // 优先显示 certNo，没有则显示 id（兼容老证书）
             const displayCertNo = cert.certNo !== undefined ? cert.certNo : (cert.id.startsWith('TEMP_') ? '' : cert.id);
             document.getElementById('certNo').value = displayCertNo;
@@ -1894,6 +1985,9 @@
             document.getElementById('exp').value = cert.expiryDate || '';
             document.getElementById('fact').value = cert.factoryNumber || '';
             document.getElementById('model').value = cert.model || '';
+            document.getElementById('approver').value = cert.approver || '';
+            document.getElementById('verifier').value = cert.verifier || '';
+            document.getElementById('operator').value = cert.operator || '';
             document.getElementById('formTitle').innerText = '✏️ 修改证书详情';
             // 加载证书级字段配置
             certFieldConfig = cert.fieldConfig ? JSON.parse(JSON.stringify(cert.fieldConfig)) : {};

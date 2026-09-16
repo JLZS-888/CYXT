@@ -349,6 +349,8 @@
 
                                 <option value="L">朗博</option>
 
+                                <option value="G">深圳国检</option>
+
                             </select>
 
                         </div>
@@ -1611,6 +1613,7 @@
             let certUrl = QUERY_BASE_URL + '#' + cert.id;
             if (cert.unit === '深圳计量院' || cert.unit === 'S') certUrl += '&S';
             if (cert.unit === '朗博' || cert.unit === 'L') certUrl += '&L';
+            if (cert.unit === '深圳国检' || cert.unit === 'G') certUrl += '&G';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(function() {

@@ -88,6 +88,10 @@
             <div id="lbHeader" class="hidden">
                 <img src="images/lb-title.png" alt="朗博" class="w-full">
             </div>
+            <!-- 深圳国检图片标题 -->
+            <div id="gjHeader" class="hidden">
+                <img src="images/gj-title.png" alt="深圳国检" class="w-full">
+            </div>
         </div>
         
         <!-- 主内容 -->
@@ -142,6 +146,12 @@
                 var ca = document.getElementById('contentArea');
                 ca.classList.remove('bg-blue-50');
                 ca.classList.add('bg-white');
+            } else if (unit === 'G') {
+                document.getElementById('defaultHeader').classList.add('hidden');
+                document.getElementById('gjHeader').classList.remove('hidden');
+                var ca2 = document.getElementById('contentArea');
+                ca2.classList.remove('bg-blue-50');
+                ca2.classList.add('bg-white');
             }
         }
         initHeader();
@@ -279,8 +289,9 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('certInfo').classList.remove('hidden');
 
-            // 单位差异化：头部 + 背景（朗博为白底）
+            // 单位差异化：头部 + 背景（朗博/深圳国检为白底）
             var isLangbo = (cert.unit === 'L' || cert.unit === '朗博');
+            var isGuojian = (cert.unit === 'G' || cert.unit === '深圳国检');
             if (cert.unit === 'S' || cert.unit === '深圳计量院') {
                 document.getElementById('defaultHeader').classList.add('hidden');
                 document.getElementById('szjlyHeader').classList.remove('hidden');
@@ -291,11 +302,18 @@
                 var rcCA = document.getElementById('contentArea');
                 rcCA.classList.remove('bg-blue-50');
                 rcCA.classList.add('bg-white');
+            } else if (isGuojian) {
+                document.getElementById('defaultHeader').classList.add('hidden');
+                document.getElementById('gjHeader').classList.remove('hidden');
+                var rcCA2 = document.getElementById('contentArea');
+                rcCA2.classList.remove('bg-blue-50');
+                rcCA2.classList.add('bg-white');
             } else {
                 // 默认单位：加载完成后显示蓝色抬头
                 document.getElementById('defaultHeader').classList.remove('hidden');
                 document.getElementById('szjlyHeader').classList.add('hidden');
                 document.getElementById('lbHeader').classList.add('hidden');
+                document.getElementById('gjHeader').classList.add('hidden');
                 document.getElementById('szjlyBottomImg').classList.add('hidden');
             }
 
@@ -499,6 +517,12 @@
                     var lbCA = document.getElementById('contentArea');
                     lbCA.classList.remove('bg-blue-50');
                     lbCA.classList.add('bg-white');
+                } else if (cert.unit === 'G' || cert.unit === '深圳国检') {
+                    document.getElementById('defaultHeader').classList.add('hidden');
+                    document.getElementById('gjHeader').classList.remove('hidden');
+                    var gjCA = document.getElementById('contentArea');
+                    gjCA.classList.remove('bg-blue-50');
+                    gjCA.classList.add('bg-white');
                 }
                 return cert;
             } catch (e) {
@@ -525,6 +549,10 @@
                 // 如果 hash 里带 &L 标记朗博
                 if (parts.length > 1 && (parts[1] === 'L' || parts[1] === 'l')) {
                     window.__hashUnit = 'L';
+                }
+                // 如果 hash 里带 &G 标记深圳国检
+                if (parts.length > 1 && (parts[1] === 'G' || parts[1] === 'g')) {
+                    window.__hashUnit = 'G';
                 }
             }
 
@@ -554,6 +582,9 @@
                     }
                     if (window.__hashUnit === 'L' && !cert.unit) {
                         cert.unit = 'L';
+                    }
+                    if (window.__hashUnit === 'G' && !cert.unit) {
+                        cert.unit = 'G';
                     }
                     renderCert(cert);
                 } else {

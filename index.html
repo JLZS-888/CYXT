@@ -157,7 +157,7 @@
         initHeader();
         
         // 字段顺序（与 cfgMask 对应）
-        const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model'];
+        const FIELD_ORDER = ['certId', 'reportType', 'result', 'orderNumber', 'client', 'instrumentName', 'manufacturer', 'calibrationDate', 'expiryDate', 'factoryNumber', 'model', 'approver', 'verifier', 'operator'];
 
         // 字段配置（默认：除certId外全部显示；certId需明确开启才显示）
         let fieldConfig = {};
@@ -180,10 +180,17 @@
             const cfg = params.get('cfg');
             if (!d) return null;
             
-            // 解析字段配置掩码（11位：certId, reportType, result, orderNumber, client, instrumentName, manufacturer, calibrationDate, expiryDate, factoryNumber, model）
-            if (cfg && cfg.length === 11) {
+            // 解析字段配置掩码（14位：certId, reportType, result, orderNumber, client, instrumentName, manufacturer, calibrationDate, expiryDate, factoryNumber, model, approver, verifier, operator）
+            if (cfg && cfg.length === 14) {
                 FIELD_ORDER.forEach((f, i) => {
                     fieldConfig[f] = cfg[i] === '1';
+                });
+                urlCfgApplied = true;
+            } else if (cfg && cfg.length === 11) {
+                // 兼容旧格式（11位，不含 approver/verifier/operator → 默认显示）
+                FIELD_ORDER.forEach((f, i) => {
+                    if (i < 11) fieldConfig[f] = cfg[i] === '1';
+                    else fieldConfig[f] = true; // 新字段默认显示
                 });
                 urlCfgApplied = true;
             } else if (cfg && cfg.length === 10) {
@@ -199,6 +206,10 @@
                 fieldConfig.expiryDate = cfg[7] === '1';
                 fieldConfig.factoryNumber = cfg[8] === '1';
                 fieldConfig.model = cfg[9] === '1';
+                // 新字段默认显示
+                fieldConfig.approver = true;
+                fieldConfig.verifier = true;
+                fieldConfig.operator = true;
                 urlCfgApplied = true;
             }
             
@@ -211,11 +222,11 @@
                         const jsonStr = decodeURIComponent(escape(atob(decoded)));
                         const data = JSON.parse(jsonStr);
                         
-                        // 新格式：a=委托单位(第一), b=证书编号, c=报告类型, d=委托单号, e=仪器名称, f=制造厂, g=校准日期, h=有效期, i=出厂编号, j=规格型号, z=结果(最后)
+                        // 新格式：a=委托单位(第一), b=证书编号, c=报告类型, d=委托单号, e=仪器名称, f=制造厂, g=校准日期, h=有效期, i=出厂编号, j=规格型号, z=结果(最后), av=批准人, vv=核验员, op=操作员
                         const cert = {
                             client: data.a || '',
                             id: data.b || '',
-                            reportType: data.c === 'J' ? '检定' : data.c === 'X' ? '校准' : '',
+                            reportType: data.c === 'J' ? '检定' : data.c === 'X' ? '校准' : (data.c === 'T' ? '检测' : ''),
                             orderNumber: data.d || '',
                             instrumentName: data.e || '',
                             manufacturer: data.f || '',
@@ -223,13 +234,16 @@
                             expiryDate: data.h || '',
                             factoryNumber: data.i || '',
                             model: data.j || '',
+                            approver: data.av || '',
+                            verifier: data.vv || '',
+                            operator: data.op || '',
                             result: data.z === 'H' ? '合格' : data.z === 'B' ? '符合要求' : ''
                         };
-                        
+
                         // 兼容旧格式
                         if (!cert.client && data.cl) cert.client = data.cl;
                         if (!cert.id && data.id) cert.id = data.id;
-                        if (!cert.reportType && data.rt) cert.reportType = data.rt === 'J' ? '检定' : data.rt === 'X' ? '校准' : '';
+                        if (!cert.reportType && data.rt) cert.reportType = data.rt === 'J' ? '检定' : data.rt === 'X' ? '校准' : (data.rt === 'T' ? '检测' : '');
                         if (!cert.orderNumber && data.on) cert.orderNumber = data.on;
                         if (!cert.instrumentName && data.in) cert.instrumentName = data.in;
                         if (!cert.manufacturer && data.mf) cert.manufacturer = data.mf;
@@ -237,6 +251,9 @@
                         if (!cert.expiryDate && data.ed) cert.expiryDate = data.ed;
                         if (!cert.factoryNumber && data.fn) cert.factoryNumber = data.fn;
                         if (!cert.model && data.md) cert.model = data.md;
+                        if (!cert.approver && data.ap) cert.approver = data.ap;
+                        if (!cert.verifier && data.vr) cert.verifier = data.vr;
+                        if (!cert.operator && data.ot) cert.operator = data.ot;
                         if (!cert.result && data.rs) cert.result = data.rs === 'H' ? '合格' : data.rs === 'B' ? '符合要求' : '';
                         
                         // 只要有一个字段有值就认为是有效数据
@@ -250,10 +267,10 @@
                 
                 // 旧格式：& 分隔的字段
                 const fields = decoded.split('&');
-                
+
                 const cert = {
                     id: fields[0] || '',
-                    reportType: fields.length > 1 ? (fields[1] === 'J' ? '检定' : fields[1] === 'X' ? '校准' : '') : '',
+                    reportType: fields.length > 1 ? (fields[1] === 'J' ? '检定' : fields[1] === 'X' ? '校准' : (fields[1] === 'T' ? '检测' : '')) : '',
                     result: fields.length > 2 ? (fields[2] === 'H' ? '合格' : fields[2] === 'B' ? '符合要求' : '') : '',
                     orderNumber: fields[3] || '',
                     client: fields[4] || '',
@@ -262,7 +279,10 @@
                     calibrationDate: fields[7] || '',
                     expiryDate: fields[8] || '',
                     factoryNumber: fields[9] || '',
-                    model: fields[10] || ''
+                    model: fields[10] || '',
+                    approver: fields[11] || '',
+                    verifier: fields[12] || '',
+                    operator: fields[13] || ''
                 };
                 
                 // 只要有一个字段有值就认为是有效数据
@@ -356,10 +376,14 @@
                 { id: 'model',         label: '规格型号',     show: fieldConfig.model },
                 { id: 'factoryNumber', label: '出厂编号',     show: fieldConfig.factoryNumber },
                 { id: 'orderNumber',   label: '委托单号',     show: fieldConfig.orderNumber },
-                { id: 'calibrationDate', label: '',           show: fieldConfig.calibrationDate, labelFn: () => cert.reportType === '检定' ? '检定日期' : '校准日期' },
+                { id: 'calibrationDate', label: '',           show: fieldConfig.calibrationDate, labelFn: () => cert.reportType === '检定' ? '检定日期' : (cert.reportType === '检测' ? '检测日期' : '校准日期') },
                 { id: 'expiryDate',    label: '有效期至',     show: fieldConfig.expiryDate },
                 { id: 'result',        label: '',             show: fieldConfig.result,
-                  labelFn: () => cert.reportType === '检定' ? '检定结果' : '校准结果' }
+                  labelFn: () => cert.reportType === '检定' ? '检定结果' : (cert.reportType === '检测' ? '检测结果' : '校准结果') },
+                { id: 'approver',      label: '批准人',       show: fieldConfig.approver },
+                { id: 'verifier',      label: '核验员',       show: fieldConfig.verifier },
+                { id: 'operator',      label: '',             show: fieldConfig.operator,
+                  labelFn: () => cert.reportType === '检定' ? '检定员' : (cert.reportType === '检测' ? '检测员' : '校准员') }
             ];
 
             const container = document.getElementById('infoCards');

@@ -2251,10 +2251,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- 防拷贝保护（不影响输入框操作） -->
 <script>
 (function() {
-    // 拦截右键：输入框内允许使用浏览器右键菜单（粘贴 Token 等）
+    // 拦截右键：输入框内允许使用浏览器右键菜单（粘贴 Token 等）；图片/二维码canvas放行（可右键另存为）
     document.addEventListener('contextmenu', function(e) {
         var t = e.target;
         if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        if (t && (t.tagName === 'IMG' || t.tagName === 'CANVAS')) return;
         e.preventDefault();
         return false;
     });
